@@ -11,7 +11,7 @@ from core.sound_manager import SoundManager
 class CountingGameController:
     """Controller for the counting game with hand gesture detection."""
     
-    def __init__(self, model_type: str = "mediapipe", screen_width: int = 800, screen_height: int = 600):
+    def __init__(self, model_type: str = "mediapipe", screen_width: int = 800, screen_height: int = 600, fullscreen: bool = False):
         """
         Initialize counting game controller.
         
@@ -19,11 +19,19 @@ class CountingGameController:
             model_type: Model type for hand detection ('mediapipe', 'tiny', 'prn', etc.)
             screen_width: Screen width
             screen_height: Screen height
+            fullscreen: Whether to start in fullscreen mode
         """
         # Initialize pygame if not already initialized
         if not pygame.get_init():
             pygame.init()
-        self.screen = pygame.display.set_mode((screen_width, screen_height))
+        self.fullscreen = fullscreen
+        if fullscreen:
+            self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+            self.screen_width, self.screen_height = self.screen.get_size()
+        else:
+            self.screen = pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE)
+            self.screen_width = screen_width
+            self.screen_height = screen_height
         pygame.display.set_caption("Counting Game - 67 Games")
         self.clock = pygame.time.Clock()
         
@@ -172,20 +180,71 @@ class CountingGameController:
         # Return the first action detected (or None)
         return actions[0] if actions else None
     
+    def toggle_fullscreen(self):
+        """Toggle between fullscreen and windowed mode."""
+        self.fullscreen = not self.fullscreen
+        if self.fullscreen:
+            self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+            self.screen_width, self.screen_height = self.screen.get_size()
+        else:
+            self.screen = pygame.display.set_mode((800, 600), pygame.RESIZABLE)
+            self.screen_width = 800
+            self.screen_height = 600
+        
+        # Update game screen and fonts
+        self.game.set_screen(self.screen)
+        self.game.screen_width = self.screen_width
+        self.game.screen_height = self.screen_height
+        self.game.update_fonts()
+    
     def run(self):
-        """Main game loop."""
+        """
+        Main game loop.
+        
+        Returns:
+            'main_menu' if user wants to return to main menu, 'exit' if user wants to exit, None otherwise
+        """
         while self.running:
             # Handle Pygame events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    self.running = False
+                    return 'exit'
+                elif event.type == pygame.VIDEORESIZE:
+                    # Handle window resize
+                    if not self.fullscreen:
+                        self.screen_width, self.screen_height = event.w, event.h
+                        self.screen = pygame.display.set_mode((self.screen_width, self.screen_height), pygame.RESIZABLE)
+                        self.game.set_screen(self.screen)
+                        self.game.screen_width = self.screen_width
+                        self.game.screen_height = self.screen_height
+                        self.game.update_fonts()
                 elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_r and self.game.game_over:
+                    if event.key == pygame.K_F11:
+                        # Toggle fullscreen
+                        self.toggle_fullscreen()
+                    elif event.key == pygame.K_r and self.game.game_over:
                         self.game.reset()
                         if self.sound_manager:
                             self.sound_manager.play_start_sound()
-                    elif event.key == pygame.K_ESCAPE:
-                        self.running = False
+                    elif event.key == pygame.K_ESCAPE or event.key == pygame.K_p:
+                        # Show pause menu
+                        from ui.pause_menu import PauseMenu
+                        pause_menu = PauseMenu(
+                            self.screen,
+                            self.screen_width,
+                            self.screen_height
+                        )
+                        # Capture current screen as background
+                        background = self.screen.copy()
+                        result = pause_menu.run(background)
+                        
+                        if result == 'main_menu':
+                            self.running = False
+                            return 'main_menu'
+                        elif result == 'exit':
+                            self.running = False
+                            return 'exit'
+                        # If 'resume', continue game loop
             
             # Process hand gesture control and display camera feed
             if self.cap is not None:
@@ -235,3 +294,5 @@ class CountingGameController:
             self.cap.release()
         cv2.destroyAllWindows()
         # Note: Don't quit pygame here - menu may still be running
+        
+        return None  # Game ended normally
