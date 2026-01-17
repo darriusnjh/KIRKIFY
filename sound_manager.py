@@ -66,31 +66,25 @@ class SoundManager:
                 pass
     
     def load_background_music(self):
-        """Load background music."""
+        """Load background music ONLY if file is named background.(mp3|wav|ogg)."""
         music_dir = "music"
-        
+
         if not os.path.exists(music_dir):
             os.makedirs(music_dir)
             print(f"Created {music_dir} directory. Add background music files here:")
             print("  - background.mp3 or background.wav or background.ogg")
             return
-        
-        # Look for music files
-        music_files = []
-        for ext in ['.mp3', '.wav', '.ogg']:
+
+        for ext in ('.mp3', '.wav', '.ogg'):
             music_path = os.path.join(music_dir, f"background{ext}")
             if os.path.exists(music_path):
-                music_files.append(music_path)
-        
-        # Also check for any music files in the directory
-        if not music_files:
-            for file in os.listdir(music_dir):
-                if file.endswith(('.mp3', '.wav', '.ogg')):
-                    music_files.append(os.path.join(music_dir, file))
-        
-        if music_files:
-            self.background_music = music_files[0]
-            print(f"Loaded background music: {self.background_music}")
+                self.background_music = music_path
+                print(f"Loaded background music: {self.background_music}")
+                return
+
+        # If none found
+        self.background_music = None
+        print("No background music found. Put background.mp3 (or .wav/.ogg) in the music/ folder.")
     
     def load_count_sound(self):
         music_dir = "music"
