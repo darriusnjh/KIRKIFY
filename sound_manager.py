@@ -14,6 +14,7 @@ class SoundManager:
         self.score_sound: Optional[pygame.mixer.Sound] = None
         self.count_sound: Optional[str] = None  # Path to 67.m4a file
         self.background_music: Optional[str] = None
+        self.count_sfx: Optional[pygame.mixer.Sound] = None  # for 67.wav/ogg
         self.music_playing = False
         self._restore_music_after_count = False
         self._background_music_to_restore = None
@@ -21,6 +22,7 @@ class SoundManager:
         self.vol_hit   = 0.9
         self.vol_score = 1.0
         self.vol_music = 0.2
+        self.vol_count = 1.0
         self.load_sounds()
         self.load_background_music()
         self.load_count_sound()
@@ -46,10 +48,11 @@ class SoundManager:
                 pass
         
         # Load hit sound
-        hit_path = os.path.join(sounds_dir, "hit.wav")
+        hit_path = os.path.join(sounds_dir, "hit.mp3")
         if os.path.exists(hit_path):
             try:
                 self.hit_sound = pygame.mixer.Sound(hit_path)
+                self.hit_sound.set_volume(self.vol_hit)
             except:
                 pass
         
@@ -90,21 +93,25 @@ class SoundManager:
             print(f"Loaded background music: {self.background_music}")
     
     def load_count_sound(self):
-        """Load the 67.m4a sound file for counting game."""
         music_dir = "music"
-        count_sound_path = os.path.join(music_dir, "67.m4a")
-        
-        if os.path.exists(count_sound_path):
-            self.count_sound = count_sound_path
-            print(f"Loaded count sound: {self.count_sound}")
-        else:
-            # Also check for other formats
-            for ext in ['.m4a', '.mp3', '.wav', '.ogg']:
-                alt_path = os.path.join(music_dir, f"67{ext}")
-                if os.path.exists(alt_path):
-                    self.count_sound = alt_path
-                    print(f"Loaded count sound: {self.count_sound}")
+
+        # Best formats for pygame.mixer.Sound
+        for ext in [".wav", ".ogg", ".mp3"]:
+            p = os.path.join(music_dir, f"67{ext}")
+            if os.path.exists(p):
+                try:
+                    self.count_sfx = pygame.mixer.Sound(p)
+                    self.count_sfx.set_volume(self.vol_count)
+                    print(f"Loaded count SFX (pygame): {p}")
                     return
+                except Exception as e:
+                    print(f"Failed to load count SFX {p}: {e}")
+
+        # Fallback: M4A (pygame Sound usually can't load this)
+        p = os.path.join(music_dir, "67.m4a")
+        if os.path.exists(p):
+            self.count_sound = p
+            print(f"Loaded count sound (m4a fallback): {p}")
     
     def play_jump_sound(self):
         """Play jump sound effect."""
@@ -152,41 +159,53 @@ class SoundManager:
             self.music_playing = False
     
     def play_count_sound(self):
-        """Play the 67.m4a sound file for counting game."""
+        if self.count_sfx:
+                try:
+                    self.count_sfx.play()
+                except Exception as e:
+                    print(f"Could not play count SFX: {e}")
+                return
+
+        # Fallback: M4A
         if not self.count_sound:
             return
-        
-        # Check file extension
+
         file_ext = os.path.splitext(self.count_sound)[1].lower()
-        
-        # Try different methods based on file format
-        if file_ext == '.m4a':
-            # M4A files - use system command (most reliable)
-            self._play_m4a_system(self.count_sound)
-        else:
-            # Try pygame mixer for other formats
+
+        if file_ext == ".m4a":
+            # Try ffplay (no GUI window) if installed
             try:
-                # Save current music state
-                was_playing = self.music_playing
-                current_music = self.background_music
-                
-                # Stop background music if playing
-                if was_playing:
-                    pygame.mixer.music.stop()
-                    self.music_playing = False
-                
-                # Load and play the count sound
-                pygame.mixer.music.load(self.count_sound)
-                pygame.mixer.music.play(0)  # Play once, don't loop
-                
-                # Set up to restart background music when count sound finishes
-                self._restore_music_after_count = was_playing
-                self._background_music_to_restore = current_music
+                subprocess.Popen(
+                    ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", self.count_sound],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
+                )
+                return
+            except FileNotFoundError:
+                print("ffplay not found. Convert 67.m4a to 67.wav or 67.ogg for no-popup playback.")
             except Exception as e:
-                print(f"Could not play count sound with pygame: {e}")
-                # Fallback to system command
-                self._play_m4a_system(self.count_sound)
-    
+                print(f"Could not play m4a via ffplay: {e}")
+
+            # Last resort: would pop up (so we avoid doing it)
+            return
+
+        # Non-m4a fallback using pygame music channel (will interrupt bgm)
+        try:
+            was_playing = self.music_playing
+            current_music = self.background_music
+
+            if was_playing:
+                pygame.mixer.music.stop()
+                self.music_playing = False
+
+            pygame.mixer.music.load(self.count_sound)
+            pygame.mixer.music.play(0)
+
+            self._restore_music_after_count = was_playing
+            self._background_music_to_restore = current_music
+        except Exception as e:  
+            print(f"Could not play count sound: {e}")
+            
     def _play_m4a_system(self, file_path):
         """Play M4A file using system command (works on macOS, Linux, Windows)."""
         try:
