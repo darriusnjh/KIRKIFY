@@ -2,7 +2,9 @@ import pygame
 import random
 import json
 import os
+import sys
 from typing import Optional
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
 
 # Initialize Pygame
 pygame.init()

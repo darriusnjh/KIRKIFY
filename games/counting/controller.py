@@ -1,9 +1,11 @@
 import pygame
 import cv2
 import sys
-from counting_game import CountingGame
-from hand_detector import HandDetector
-from sound_manager import SoundManager
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
+from games.counting.game import CountingGame
+from core.hand_detector import HandDetector
+from core.sound_manager import SoundManager
 
 
 class CountingGameController:

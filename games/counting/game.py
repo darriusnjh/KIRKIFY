@@ -2,8 +2,10 @@ import pygame
 import json
 import os
 import time
-from base_game import BaseGame
+import sys
 from typing import Optional
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
+from core.base_game import BaseGame
 
 
 class CountingGame(BaseGame):
@@ -29,20 +31,41 @@ class CountingGame(BaseGame):
         # Webcam feed
         self.webcam_surface = None
         
-        # Fonts
-        self.big_font = pygame.font.Font(None, 120)
-        self.medium_font = pygame.font.Font(None, 72)
-        self.small_font = pygame.font.Font(None, 36)
+        # Fonts (will be updated responsively)
+        self.update_fonts()
         
-        # Colors
-        self.WHITE = (255, 255, 255)
-        self.BLACK = (0, 0, 0)
-        self.BLUE = (100, 150, 255)
-        self.RED = (255, 100, 100)
-        self.GREEN = (100, 255, 100)
-        self.YELLOW = (255, 255, 0)
+        # Modern color palette
+        from core.ui_utils import UITheme
+        self.theme = UITheme
+        self.BG_DARK = UITheme.BG_DARK
+        self.TEXT_PRIMARY = UITheme.TEXT_PRIMARY
+        self.TEXT_SECONDARY = UITheme.TEXT_SECONDARY
+        self.ACCENT_PRIMARY = UITheme.ACCENT_PRIMARY
+        self.ACCENT_SECONDARY = UITheme.ACCENT_SECONDARY
+        self.SUCCESS = UITheme.SUCCESS
+        self.WARNING = UITheme.WARNING
+        self.ERROR = UITheme.ERROR
+        
+        # Legacy colors for compatibility
+        self.WHITE = self.TEXT_PRIMARY
+        self.BLACK = self.BG_DARK
+        self.BLUE = self.ACCENT_PRIMARY
+        self.RED = self.ERROR
+        self.GREEN = self.SUCCESS
+        self.YELLOW = self.WARNING
         self.ORANGE = (255, 165, 0)
-        self.GRAY = (128, 128, 128)
+        self.GRAY = self.TEXT_SECONDARY
+    
+    def update_fonts(self):
+        """Update fonts based on current screen size."""
+        from core.ui_utils import UITheme
+        self.big_font_size = UITheme.get_responsive_font_size(120, self.screen_height, 60)
+        self.medium_font_size = UITheme.get_responsive_font_size(72, self.screen_height, 36)
+        self.small_font_size = UITheme.get_responsive_font_size(36, self.screen_height, 18)
+        
+        self.big_font = pygame.font.Font(None, self.big_font_size)
+        self.medium_font = pygame.font.Font(None, self.medium_font_size)
+        self.small_font = pygame.font.Font(None, self.small_font_size)
         
     def load_high_score(self):
         """Load high score from file."""
@@ -164,8 +187,14 @@ class CountingGame(BaseGame):
         if not self.screen:
             return
         
-        # Background
-        self.screen.fill(self.BLACK)
+        # Modern gradient background
+        self.screen.fill(self.BG_DARK)
+        
+        # Subtle gradient effect
+        for y in range(0, self.screen_height, 2):
+            alpha = int(255 * (1 - y / self.screen_height * 0.3))
+            color = tuple(min(255, c + int((self.BG_DARK[0] - c) * y / self.screen_height)) for c in self.BG_DARK)
+            pygame.draw.line(self.screen, color, (0, y), (self.screen_width, y))
         
         if not self.game_started:
             # Start screen

@@ -3,22 +3,26 @@
 Launches games from the menu system.
 """
 import sys
+import os
 import argparse
-from menu import GameMenu
-from counting_game_controller import CountingGameController
 
-# Import FlappyBirdController from main.py
-# We'll import it dynamically to avoid circular imports
+# Add project root to path
+sys.path.insert(0, os.path.dirname(__file__))
+
+from ui.menu import GameMenu
+from games.counting.controller import CountingGameController
+
+# Import FlappyBirdController
 def get_flappy_controller():
-    """Get FlappyBirdController class from main.py"""
-    import main
-    return main.FlappyBirdController
+    """Get FlappyBirdController class"""
+    from games.flappy_bird.controller import FlappyBirdController
+    return FlappyBirdController
 
-# Import RhythmHandController from rhythm_main.py
+# Import RhythmHandController
 def get_rhythm_controller():
-    """Get RhythmHandController class from rhythm_main.py"""
-    import rhythm_main
-    return rhythm_main.RhythmHandController
+    """Get RhythmHandController class"""
+    from games.rhythm.controller import RhythmHandController
+    return RhythmHandController
 
 
 def launch_flappy_bird(model_type="mediapipe", use_hand_control=True):
