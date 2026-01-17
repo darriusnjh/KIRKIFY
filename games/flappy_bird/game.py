@@ -407,3 +407,5 @@ class Game:
     
     def restart(self):
         self.reset()
+        if self.sound_manager:
+            self.sound_manager.start_background_music()   # <-- ADD THIS
