@@ -271,7 +271,7 @@ class HandDetector:
                 right_hand_detected = hand
         
         # Draw left hand (detected or ghost)
-        if left_hand_detected:
+        if left_hand_detected and left_hand_detected.get('bbox') is not None:
             # Draw actual detected left hand
             x, y, w, h = left_hand_detected['bbox']
             center = left_hand_detected['center']
@@ -295,7 +295,7 @@ class HandDetector:
         label = "L"
         font_scale = 2.0
         thickness = 4
-        center_to_use = left_hand_detected['center'] if left_hand_detected else left_default_pos
+        center_to_use = left_hand_detected['center'] if (left_hand_detected and left_hand_detected.get('bbox') is not None) else left_default_pos
         text_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
         text_x = center_to_use[0] - text_size[0] // 2
         text_y = center_to_use[1] + text_size[1] // 2
@@ -304,12 +304,12 @@ class HandDetector:
         cv2.putText(result_frame, label, (text_x + 3, text_y + 3),
                    cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), thickness + 2)
         # Draw text (slightly dimmer when not detected)
-        text_color = (255, 255, 255) if left_hand_detected else (200, 200, 200)
+        text_color = (255, 255, 255) if (left_hand_detected and left_hand_detected.get('bbox') is not None) else (200, 200, 200)
         cv2.putText(result_frame, label, (text_x, text_y),
                    cv2.FONT_HERSHEY_SIMPLEX, font_scale, text_color, thickness)
         
         # Draw right hand (detected or ghost)
-        if right_hand_detected:
+        if right_hand_detected and right_hand_detected.get('bbox') is not None:
             # Draw actual detected right hand
             x, y, w, h = right_hand_detected['bbox']
             center = right_hand_detected['center']
@@ -331,7 +331,7 @@ class HandDetector:
         
         # Draw label for right hand
         label = "R"
-        center_to_use = right_hand_detected['center'] if right_hand_detected else right_default_pos
+        center_to_use = right_hand_detected['center'] if (right_hand_detected and right_hand_detected.get('bbox') is not None) else right_default_pos
         text_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
         text_x = center_to_use[0] - text_size[0] // 2
         text_y = center_to_use[1] + text_size[1] // 2
@@ -340,7 +340,7 @@ class HandDetector:
         cv2.putText(result_frame, label, (text_x + 3, text_y + 3),
                    cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), thickness + 2)
         # Draw text (slightly dimmer when not detected)
-        text_color = (255, 255, 255) if right_hand_detected else (200, 200, 200)
+        text_color = (255, 255, 255) if (right_hand_detected and right_hand_detected.get('bbox') is not None) else (200, 200, 200)
         cv2.putText(result_frame, label, (text_x, text_y),
                    cv2.FONT_HERSHEY_SIMPLEX, font_scale, text_color, thickness)
         
