@@ -470,7 +470,7 @@ class RhythmGame:
                     if event.key == pygame.K_ESCAPE:
                             if self.sound_manager:
                                 self.sound_manager.stop_background_music()
-                            return "main_menu"
+                            running = False
                     elif event.key == pygame.K_r and self.game_over:
                         self.reset()
                     elif event.key == pygame.K_a:  # Left hand (for testing)

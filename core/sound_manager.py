@@ -164,9 +164,8 @@ class SoundManager:
 
     def stop_background_music(self):
         """Stop background music."""
-        if self.music_playing:
-            pygame.mixer.music.stop()
-            self.music_playing = False
+        pygame.mixer.music.stop()
+        self.music_playing = False
     
     def play_count_sound(self):
         if self.count_sfx:
@@ -266,3 +265,16 @@ class SoundManager:
                     self._restore_music_after_count = False
                 except:
                     self._restore_music_after_count = False
+    def stop_all_sounds(self):
+        """Stop EVERYTHING: music + all sound effect channels."""
+        try:
+            pygame.mixer.music.stop()   # background music
+        except:
+            pass
+
+        try:
+            pygame.mixer.stop()         # stops all Sound() channels
+        except:
+            pass
+
+        self.music_playing = False

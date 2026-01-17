@@ -3,7 +3,7 @@ import pygame
 import sys
 from typing import Optional
 from core.ui_utils import UITheme
-
+from core.sound_manager import SoundManager
 
 class PauseMenu:
     """In-game pause menu with options to resume, return to main menu, or exit."""
@@ -20,7 +20,8 @@ class PauseMenu:
         self.screen = screen
         self.screen_width = screen_width
         self.screen_height = screen_height
-        
+        self.sound_manager = SoundManager()
+
         # Calculate responsive font sizes
         self.title_font_size = UITheme.get_responsive_font_size(64, screen_height, 48)
         self.menu_font_size = UITheme.get_responsive_font_size(36, screen_height, 28)
@@ -57,8 +58,12 @@ class PauseMenu:
                     if option_name == "Resume":
                         self.result = 'resume'
                     elif option_name == "Main Menu":
+                        if self.sound_manager:
+                            self.sound_manager.stop_all_sounds()
                         self.result = 'main_menu'
                     elif option_name == "Exit":
+                        if self.sound_manager:
+                            self.sound_manager.stop_all_sounds()
                         self.result = 'exit'
                     return False
                 elif event.key == pygame.K_ESCAPE:
