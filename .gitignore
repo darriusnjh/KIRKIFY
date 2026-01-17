@@ -11,7 +11,4 @@ models/*.weights
 models/*.cfg
 models/*.names
 high_scores.json
-*.mp3
-*.wav
-*.ogg
 .DS_Store

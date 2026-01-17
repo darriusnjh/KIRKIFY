@@ -17,7 +17,10 @@ class SoundManager:
         self.music_playing = False
         self._restore_music_after_count = False
         self._background_music_to_restore = None
-        
+        self.vol_jump  = 0.4
+        self.vol_hit   = 0.9
+        self.vol_score = 1.0
+        self.vol_music = 0.2
         self.load_sounds()
         self.load_background_music()
         self.load_count_sound()
@@ -55,6 +58,7 @@ class SoundManager:
         if os.path.exists(score_path):
             try:
                 self.score_sound = pygame.mixer.Sound(score_path)
+                self.score_sound.set_volume(self.vol_score)
             except:
                 pass
     
@@ -135,6 +139,7 @@ class SoundManager:
         if self.background_music and not self.music_playing:
             try:
                 pygame.mixer.music.load(self.background_music)
+                pygame.mixer.music.set_volume(self.vol_music)
                 pygame.mixer.music.play(-1)  # Loop indefinitely
                 self.music_playing = True
             except Exception as e:
