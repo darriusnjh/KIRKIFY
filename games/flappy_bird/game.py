@@ -189,7 +189,7 @@ class Game:
         
         # Load background
         self.background_img = None
-        bg_path = os.path.join(ASSETS_DIR, 'background.png')
+        bg_path = os.path.join(ASSETS_DIR, 'flappy_67/background.png')
         if os.path.exists(bg_path):
             try:
                 bg = pygame.image.load(bg_path).convert()
