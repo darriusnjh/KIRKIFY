@@ -171,6 +171,7 @@ class Game:
         if not self.game_over:
             if not self.game_started:
                 self.game_started = True
+                self.sound_manager.start_background_music("background.mp3")
             self.bird.jump()
             return True
         return False
@@ -408,4 +409,4 @@ class Game:
     def restart(self):
         self.reset()
         if self.sound_manager:
-            self.sound_manager.start_background_music()   # <-- ADD THIS
+            self.sound_manager.start_background_music("background.mp3")   # <-- ADD THIS

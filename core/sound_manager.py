@@ -148,17 +148,20 @@ class SoundManager:
         """Play start sound effect."""
         self.play_jump_sound()
     
-    def start_background_music(self):
-        """Start playing background music."""
-        if self.background_music and not self.music_playing:
+    def start_background_music(self, filename: Optional[str] = None):
+        if filename is not None:
+            # Only allow loading from music/ folder
+            self.background_music = os.path.join("music", filename)
+
+        if self.background_music:
             try:
                 pygame.mixer.music.load(self.background_music)
                 pygame.mixer.music.set_volume(self.vol_music)
-                pygame.mixer.music.play(-1)  # Loop indefinitely
+                pygame.mixer.music.play(-1)
                 self.music_playing = True
             except Exception as e:
                 print(f"Could not play background music: {e}")
-    
+
     def stop_background_music(self):
         """Stop background music."""
         if self.music_playing:

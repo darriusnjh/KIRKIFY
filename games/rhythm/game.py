@@ -3,7 +3,7 @@ import random
 import sys
 import time
 from typing import List, Optional
-
+from core.sound_manager import SoundManager
 # Initialize Pygame
 pygame.init()
 
@@ -97,7 +97,7 @@ class RhythmGame:
         self.small_font = pygame.font.Font(None, 24)
         self.webcam_surface = None  # For external webcam feed
         self.detected_hands_info = []  # For hand detection info
-        
+        self.sound_manager = SoundManager()
         self.reset()
         
     def reset(self):
@@ -194,6 +194,8 @@ class RhythmGame:
         """
         if not self.game_started:
             self.game_started = True
+            if self.sound_manager:
+                self.sound_manager.start_background_music("rhythmsound.mp3") 
             return
             
         if self.game_over:
