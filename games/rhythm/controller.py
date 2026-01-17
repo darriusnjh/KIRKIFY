@@ -73,8 +73,7 @@ class RhythmHandController:
         if self.fullscreen:
             self.game.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         else:
-            from games.rhythm.game import SCREEN_WIDTH, SCREEN_HEIGHT
-            self.game.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
+            self.game.screen = pygame.display.set_mode((800, 600), pygame.RESIZABLE)
         # Note: All attributes are already initialized in __init__, no need to reset here
         
     def filter_hands(self, hands):

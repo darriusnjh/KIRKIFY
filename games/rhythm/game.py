@@ -3,7 +3,7 @@ import random
 import sys
 import time
 from typing import List, Optional
-
+from core.sound_manager import SoundManager
 # Initialize Pygame
 pygame.init()
 
@@ -93,7 +93,7 @@ class RhythmGame:
         if fullscreen:
             self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         else:
-            self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
+            self.screen = pygame.display.set_mode((800, 600), pygame.RESIZABLE)
         pygame.display.set_caption("Rhythm Hand Game")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 36)
@@ -101,7 +101,7 @@ class RhythmGame:
         self.small_font = pygame.font.Font(None, 24)
         self.webcam_surface = None  # For external webcam feed
         self.detected_hands_info = []  # For hand detection info
-        
+        self.sound_manager = SoundManager()
         self.reset()
         
     def reset(self):
@@ -198,6 +198,8 @@ class RhythmGame:
         """
         if not self.game_started:
             self.game_started = True
+            if self.sound_manager:
+                self.sound_manager.start_background_music("rhythmsound.mp3") 
             return
             
         if self.game_over:
@@ -248,6 +250,8 @@ class RhythmGame:
             active_notes = [n for n in self.notes if n.active]
             if len(active_notes) == 0:
                 self.game_over = True
+                if self.sound_manager:
+                    self.sound_manager.stop_background_music()
                 
     def draw(self):
         """Draw everything."""
@@ -464,7 +468,9 @@ class RhythmGame:
                     running = False
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
-                        running = False
+                            if self.sound_manager:
+                                self.sound_manager.stop_background_music()
+                            return "main_menu"
                     elif event.key == pygame.K_r and self.game_over:
                         self.reset()
                     elif event.key == pygame.K_a:  # Left hand (for testing)
@@ -475,7 +481,8 @@ class RhythmGame:
             self.update()
             self.draw()
             self.clock.tick(FPS)
-            
+        if self.sound_manager:
+            self.sound_manager.stop_background_music()
         pygame.quit()
         sys.exit()
 

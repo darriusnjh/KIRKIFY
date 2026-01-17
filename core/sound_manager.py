@@ -26,7 +26,12 @@ class SoundManager:
         self.load_sounds()
         self.load_background_music()
         self.load_count_sound()
-    
+        self.music_ducked = False
+        self.duck_timer_ms = 0
+        self.duck_volume = 0.03          # during score
+        self.normal_music_volume = self.vol_music
+        self.duck_duration_ms = 6000      # how long to duck
+
     def load_sounds(self):
         """Load sound effects."""
         sounds_dir = "sounds"
@@ -114,7 +119,7 @@ class SoundManager:
                 self.jump_sound.play()
             except:
                 pass
-    
+        
     def play_hit_sound(self):
         """Play hit/collision sound effect."""
         if self.hit_sound:
@@ -122,7 +127,11 @@ class SoundManager:
                 self.hit_sound.play()
             except:
                 pass
-    
+        if pygame.mixer.music.get_busy():
+            pygame.mixer.music.set_volume(self.duck_volume)
+            self.music_ducked = True
+            self.duck_timer_ms = pygame.time.get_ticks() + self.duck_duration_ms
+        
     def play_score_sound(self):
         """Play score sound effect."""
         if self.score_sound:
@@ -130,22 +139,29 @@ class SoundManager:
                 self.score_sound.play()
             except:
                 pass
+        if pygame.mixer.music.get_busy():
+            pygame.mixer.music.set_volume(self.duck_volume)
+            self.music_ducked = True
+            self.duck_timer_ms = pygame.time.get_ticks() + self.duck_duration_ms
     
     def play_start_sound(self):
         """Play start sound effect."""
         self.play_jump_sound()
     
-    def start_background_music(self):
-        """Start playing background music."""
-        if self.background_music and not self.music_playing:
+    def start_background_music(self, filename: Optional[str] = None):
+        if filename is not None:
+            # Only allow loading from music/ folder
+            self.background_music = os.path.join("music", filename)
+
+        if self.background_music:
             try:
                 pygame.mixer.music.load(self.background_music)
                 pygame.mixer.music.set_volume(self.vol_music)
-                pygame.mixer.music.play(-1)  # Loop indefinitely
+                pygame.mixer.music.play(-1)
                 self.music_playing = True
             except Exception as e:
                 print(f"Could not play background music: {e}")
-    
+
     def stop_background_music(self):
         """Stop background music."""
         if self.music_playing:
@@ -236,6 +252,9 @@ class SoundManager:
     
     def update(self):
         """Update sound manager (check if music should start or restore)."""
+        if self.music_ducked and pygame.time.get_ticks() >= self.duck_timer_ms:
+            pygame.mixer.music.set_volume(self.vol_music)
+            self.music_ducked = False
         # Check if we need to restore background music after count sound
         if self._restore_music_after_count and self._background_music_to_restore:
             if not pygame.mixer.music.get_busy():
