@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
 pygame.init()
 
 # Constants
-SCREEN_WIDTH = 400
+SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 GRAVITY = 0.7
 JUMP_STRENGTH = -6  # Reduced from -8 to -4 (half the jump height)
@@ -124,7 +124,7 @@ class Game:
         if fullscreen:
             self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         else:
-            self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
+            self.screen = pygame.display.set_mode((800, 600), pygame.RESIZABLE)
         pygame.display.set_caption("Flappy Bird")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 36)
