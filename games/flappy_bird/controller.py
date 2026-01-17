@@ -302,6 +302,40 @@ class FlappyBirdController:
                             len(set(h.get('handedness') for h in hands_raw)) < 2
                         )
                         
+                        # ALWAYS ensure we have both left and right hands (fill in missing ones with dummies)
+                        frame_height, frame_width = frame.shape[:2]
+                        has_left = any(h.get('handedness') == 'Left' for h in hands)
+                        has_right = any(h.get('handedness') == 'Right' for h in hands)
+                        
+                        # Create list to hold final hands (always 2: one left, one right)
+                        final_hands = []
+                        
+                        # Add or create left hand
+                        if has_left:
+                            final_hands.append([h for h in hands if h.get('handedness') == 'Left'][0])
+                        else:
+                            # Create dummy left hand
+                            final_hands.append({
+                                'center': (frame_width // 3, frame_height // 2),
+                                'handedness': 'Left',
+                                'confidence': 0.0,
+                                'bbox': None
+                            })
+                        
+                        # Add or create right hand
+                        if has_right:
+                            final_hands.append([h for h in hands if h.get('handedness') == 'Right'][0])
+                        else:
+                            # Create dummy right hand
+                            final_hands.append({
+                                'center': (2 * frame_width // 3, frame_height // 2),
+                                'handedness': 'Right',
+                                'confidence': 0.0,
+                                'bbox': None
+                            })
+                        
+                        hands = final_hands
+                        
                         # Draw detections on frame
                         frame_with_boxes = self.hand_detector.draw_detections(frame, hands)
                         

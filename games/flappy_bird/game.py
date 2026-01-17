@@ -369,20 +369,23 @@ class Game:
                     handedness = hand.get('handedness', 'Hand')
                     confidence = hand.get('confidence', 0)
                     
+                    # Check if this is a dummy hand (0% confidence)
+                    is_dummy = confidence == 0.0
+                    
                     # Choose color based on handedness
                     if handedness == 'Left':
-                        color = (100, 100, 255)  # Light blue for left
+                        color = (100, 100, 255) if not is_dummy else (80, 80, 180)  # Light blue for left, darker if dummy
                     elif handedness == 'Right':
-                        color = (255, 100, 100)  # Light red for right
+                        color = (255, 100, 100) if not is_dummy else (180, 80, 80)  # Light red for right, darker if dummy
                     else:
                         color = (100, 255, 100)  # Light green for unknown
                     
                     # Highlight the hand that should jump next
                     if hasattr(self, 'next_jump_hand') and handedness == self.next_jump_hand:
                         color = (255, 255, 0)  # Bright yellow for active hand
-                        text = f">>> {handedness} Hand: {confidence:.0%} <<<"
+                        text = f">>> {handedness} Hand: {confidence:.0%}" + (" [No Detection]" if is_dummy else "") + " <<<"
                     else:
-                        text = f"{handedness} Hand: {confidence:.0%}"
+                        text = f"{handedness} Hand: {confidence:.0%}" + (" [No Detection]" if is_dummy else "")
                     
                     hand_text = hand_info_font.render(text, True, color)
                     # Add black outline for better visibility
