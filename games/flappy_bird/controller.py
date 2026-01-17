@@ -10,16 +10,18 @@ from core.sound_manager import SoundManager
 
 
 class FlappyBirdController:
-    def __init__(self, use_hand_control: bool = True, model_type: str = "mediapipe"):
+    def __init__(self, use_hand_control: bool = True, model_type: str = "mediapipe", fullscreen: bool = False):
         """
         Initialize Flappy Bird game controller.
         
         Args:
             use_hand_control: Whether to use hand gesture control
             model_type: Model type for hand detection ('mediapipe', 'tiny', 'prn', etc.)
+            fullscreen: Whether to start in fullscreen mode
         """
+        self.fullscreen = fullscreen
         self.sound_manager = SoundManager()
-        self.game = Game(sound_manager=self.sound_manager)
+        self.game = Game(sound_manager=self.sound_manager, fullscreen=fullscreen)
         self.use_hand_control = use_hand_control
         
         if use_hand_control:
@@ -61,14 +63,24 @@ class FlappyBirdController:
         
         self.running = True
         self.last_hand_positions = {}  # Track positions per hand: {hand_key: {'y': y_pos, 'frames_still': count}}
+        self.last_jump_hand = None  # Track which hand performed the last jump (for alternating)
         self.jump_threshold = 32  # pixels to move up to trigger jump (increased by 2 for less sensitivity)
         self.frame_skip = 1  # Process every frame for better responsiveness (reduced from 2)
         self.frame_counter = 0
         self.jump_cooldown = 1  # Frames until next jump allowed
         self.jump_cooldown_frames = 0  # Cooldown period (5 frames = ~0.08s at 60 FPS)
-        self.last_jump_hand = None  # Track which hand performed the last jump (for alternating)
         self.still_threshold = 10  # pixels - if hand moves less than this, consider it still
         self.reset_after_still_frames = 20  # Reset position after 30 frames (~0.5s) of being still
+    
+    def toggle_fullscreen(self):
+        """Toggle between fullscreen and windowed mode."""
+        self.fullscreen = not self.fullscreen
+        if self.fullscreen:
+            self.game.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        else:
+            from games.flappy_bird.game import SCREEN_WIDTH, SCREEN_HEIGHT
+            self.game.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
+        # Note: All attributes are already initialized in __init__, no need to reset here
         
     def filter_hands(self, hands):
         """
@@ -264,14 +276,19 @@ class FlappyBirdController:
         return should_jump
     
     def run(self):
-        """Main game loop."""
+        """
+        Main game loop.
+        
+        Returns:
+            'main_menu' if user wants to return to main menu, None otherwise
+        """
         clock = pygame.time.Clock()
         
         while self.running:
             # Handle Pygame events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    self.running = False
+                    return 'exit'
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
                         if self.game.handle_jump():
@@ -279,8 +296,35 @@ class FlappyBirdController:
                     elif event.key == pygame.K_r and self.game.game_over:
                         self.game.restart()
                         self.sound_manager.play_start_sound()
-                    elif event.key == pygame.K_ESCAPE:
-                        self.running = False
+                    elif event.key == pygame.K_ESCAPE or event.key == pygame.K_p:
+                        # Show pause menu
+                        try:
+                            from ui.pause_menu import PauseMenu
+                            
+                            # Get screen dimensions
+                            screen_width = self.game.screen.get_width()
+                            screen_height = self.game.screen.get_height()
+                            
+                            pause_menu = PauseMenu(
+                                self.game.screen,
+                                screen_width,
+                                screen_height
+                            )
+                            # Capture current screen as background
+                            background = self.game.screen.copy()
+                            result = pause_menu.run(background)
+                            
+                            if result == 'main_menu':
+                                self.running = False
+                                return 'main_menu'
+                            elif result == 'exit':
+                                self.running = False
+                                return 'exit'
+                            # If 'resume', continue game loop
+                        except Exception as e:
+                            print(f"Error showing pause menu: {e}")
+                            import traceback
+                            traceback.print_exc()
             
             # Process hand gesture control
             if self.use_hand_control and self.cap is not None:
@@ -380,7 +424,8 @@ class FlappyBirdController:
         if self.cap is not None:
             self.cap.release()
         cv2.destroyAllWindows()
-        pygame.quit()
+        # Note: Don't quit pygame here - menu may still be running
+        return None  # Game ended normally
         sys.exit()
 
 

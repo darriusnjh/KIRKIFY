@@ -88,8 +88,12 @@ class Note:
 
 
 class RhythmGame:
-    def __init__(self):
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    def __init__(self, fullscreen: bool = False):
+        self.fullscreen = fullscreen
+        if fullscreen:
+            self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        else:
+            self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
         pygame.display.set_caption("Rhythm Hand Game")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 36)

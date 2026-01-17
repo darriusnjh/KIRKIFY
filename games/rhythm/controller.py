@@ -9,15 +9,17 @@ from core.hand_detector import HandDetector
 
 
 class RhythmHandController:
-    def __init__(self, use_hand_control: bool = True, model_type: str = "mediapipe"):
+    def __init__(self, use_hand_control: bool = True, model_type: str = "mediapipe", fullscreen: bool = False):
         """
         Initialize Rhythm Game controller with hand gesture detection.
         
         Args:
             use_hand_control: Whether to use hand gesture control
             model_type: Model type for hand detection ('mediapipe', 'prn', etc.)
+            fullscreen: Whether to start in fullscreen mode
         """
-        self.game = RhythmGame()
+        self.fullscreen = fullscreen
+        self.game = RhythmGame(fullscreen=fullscreen)
         self.use_hand_control = use_hand_control
         
         if use_hand_control:
@@ -59,11 +61,21 @@ class RhythmHandController:
         self.last_hand_positions = {}  # Track positions per hand
         self.jump_threshold = 32  # pixels to move up to trigger gesture
         self.frame_skip = 2  # Process every Nth frame for performance
-        self.frame_counter = 0
-        self.jump_cooldown = 0
-        self.jump_cooldown_frames = 10  # Cooldown for rhythm game
-        self.still_threshold = 1
-        self.reset_after_still_frames = 20
+        self.frame_counter = 0  # Frame counter for processing hand detection
+        self.jump_cooldown = 0  # Cooldown counter for preventing rapid gestures
+        self.jump_cooldown_frames = 10  # Cooldown period in frames
+        self.still_threshold = 1  # pixels - if hand moves less than this, consider it still
+        self.reset_after_still_frames = 20  # Reset position after N frames of being still
+    
+    def toggle_fullscreen(self):
+        """Toggle between fullscreen and windowed mode."""
+        self.fullscreen = not self.fullscreen
+        if self.fullscreen:
+            self.game.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        else:
+            from games.rhythm.game import SCREEN_WIDTH, SCREEN_HEIGHT
+            self.game.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
+        # Note: All attributes are already initialized in __init__, no need to reset here
         
     def filter_hands(self, hands):
         """Filter hands to ensure only one left and one right hand maximum."""
@@ -202,15 +214,50 @@ class RhythmHandController:
         return gesture_hand
     
     def run(self):
-        """Main game loop with hand gesture control."""
+        """
+        Main game loop with hand gesture control.
+        
+        Returns:
+            'main_menu' if user wants to return to main menu, 'exit' if user wants to exit, None otherwise
+        """
         while self.running:
             # Handle Pygame events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    self.running = False
+                    return 'exit'
                 elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        self.running = False
+                    if event.key == pygame.K_F11:
+                        # Toggle fullscreen
+                        self.toggle_fullscreen()
+                    elif event.key == pygame.K_ESCAPE or event.key == pygame.K_p:
+                        # Show pause menu
+                        try:
+                            from ui.pause_menu import PauseMenu
+                            
+                            # Get screen dimensions
+                            screen_width = self.game.screen.get_width()
+                            screen_height = self.game.screen.get_height()
+                            
+                            pause_menu = PauseMenu(
+                                self.game.screen,
+                                screen_width,
+                                screen_height
+                            )
+                            # Capture current screen as background
+                            background = self.game.screen.copy()
+                            result = pause_menu.run(background)
+                            
+                            if result == 'main_menu':
+                                self.running = False
+                                return 'main_menu'
+                            elif result == 'exit':
+                                self.running = False
+                                return 'exit'
+                            # If 'resume', continue game loop
+                        except Exception as e:
+                            print(f"Error showing pause menu: {e}")
+                            import traceback
+                            traceback.print_exc()
                     elif event.key == pygame.K_r and self.game.game_over:
                         self.game.reset()
                     # Keyboard controls for testing
@@ -257,8 +304,8 @@ class RhythmHandController:
         if self.cap is not None:
             self.cap.release()
         cv2.destroyAllWindows()
-        pygame.quit()
-        sys.exit()
+        # Note: Don't quit pygame here - menu may still be running
+        return None  # Game ended normally
 
 
 def main():

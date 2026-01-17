@@ -21,8 +21,13 @@ class UITheme:
     
     @staticmethod
     def get_responsive_font_size(base_size: int, screen_height: int, min_size: int = 12) -> int:
-        """Calculate responsive font size based on screen height."""
-        return max(min_size, int(base_size * (screen_height / 600)))
+        """
+        Calculate responsive font size based on screen height.
+        Uses square root scaling to prevent text from becoming too large in fullscreen.
+        """
+        # Use square root scaling to prevent cluttering in fullscreen
+        scale_factor = (screen_height / 600) ** 0.7  # 0.7 power provides smoother scaling
+        return max(min_size, int(base_size * scale_factor))
     
     @staticmethod
     def create_screen(fullscreen: bool = False, width: int = None, height: int = None):

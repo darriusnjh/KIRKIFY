@@ -119,8 +119,12 @@ class Pipe:
 
 
 class Game:
-    def __init__(self, sound_manager=None):
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    def __init__(self, sound_manager=None, fullscreen: bool = False):
+        self.fullscreen = fullscreen
+        if fullscreen:
+            self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        else:
+            self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
         pygame.display.set_caption("Flappy Bird")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 36)
