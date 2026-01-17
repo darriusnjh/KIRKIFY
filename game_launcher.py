@@ -103,8 +103,8 @@ def main():
     
     # Add games to menu
     menu.add_game(
-        "Flappy Bird",
-        "Classic Flappy Bird with hand gesture control",
+        "Flappy 67",
+        "Classic Flappy 67 with hand gesture control",
         lambda: launch_flappy_bird(model_type=args.model, use_hand_control=not args.no_hand, fullscreen=game_fullscreen)
     )
     

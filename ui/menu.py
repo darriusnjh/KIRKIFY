@@ -124,19 +124,20 @@ class GameMenu:
         self.screen.blit(subtitle_text, subtitle_rect)
         
         # Game list - responsive positioning with more spacing
-        start_y = int(self.screen_height * 0.25)
-        spacing = int(self.screen_height * 0.15)  # Increased from 0.12 to 0.15 for more space
+        # Game list - responsive positioning with more spacing
+        start_y = int(self.screen_height * 0.22)
+        spacing = int(self.screen_height * 0.18)
         
         for i, (name, description, _) in enumerate(self.games):
             y_pos = start_y + i * spacing
-            item_height = int(self.screen_height * 0.1)  # Increased from 0.08 to 0.1 for more vertical space
+            item_height = int(self.screen_height * 0.16)
             
             # Highlight selected game
             if i == self.selected_index:
                 # Draw background highlight
                 highlight_rect = pygame.Rect(
                     int(self.screen_width * 0.05), 
-                    y_pos - int(item_height * 0.15),  # More padding above
+                    y_pos,
                     int(self.screen_width * 0.9), 
                     item_height
                 )
@@ -145,17 +146,18 @@ class GameMenu:
                 
                 # Draw selection arrow
                 arrow_text = self.menu_font.render(">", True, self.YELLOW)
-                self.screen.blit(arrow_text, (int(self.screen_width * 0.08), y_pos))
+                arrow_y = y_pos + (item_height - arrow_text.get_height()) // 2
+                self.screen.blit(arrow_text, (int(self.screen_width * 0.08), arrow_y))
             
-            # Game name - positioned at top of item
+            # Game name
             color = self.YELLOW if i == self.selected_index else self.WHITE
             name_text = self.menu_font.render(name, True, color)
-            name_y = y_pos - int(item_height * 0.2)  # Position name higher with more space
+            name_y = y_pos + int(item_height * 0.15)
             self.screen.blit(name_text, (int(self.screen_width * 0.12), name_y))
             
-            # Description - with more spacing from name (clear separation)
+            # Description
             desc_text = self.subtitle_font.render(description, True, self.GRAY)
-            desc_y = y_pos + int(item_height * 0.15)  # More space between name and description
+            desc_y = name_y + name_text.get_height() + 5 
             self.screen.blit(desc_text, (int(self.screen_width * 0.12), desc_y))
         
         # Instructions - responsive positioning

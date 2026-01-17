@@ -46,7 +46,7 @@ class Bird:
                 raw_image = pygame.image.load(image_path).convert_alpha()
                 # Scale to fit approximate size while maintaining aspect ratio
                 # We target a height based on the bird's radius
-                target_height = int(self.radius * 2.8)
+                target_height = int(self.radius * 2.2) # Reduced from 2.8 to 2.2 for smaller bird
                 original_width, original_height = raw_image.get_size()
                 aspect_ratio = original_width / original_height
                 target_width = int(target_height * aspect_ratio)
@@ -73,23 +73,6 @@ class Bird:
              rect = rotated_image.get_rect(center=(int(self.x), int(self.y)))
              screen.blit(rotated_image, rect)
              return
-
-        # Draw bird as a circle with a small triangle for beak
-        center = (int(self.x), int(self.y))
-        pygame.draw.circle(screen, YELLOW, center, self.radius)
-        pygame.draw.circle(screen, BLACK, center, self.radius, 2)
-        
-        # Draw eye
-        eye_pos = (int(self.x + 5), int(self.y - 5))
-        pygame.draw.circle(screen, BLACK, eye_pos, 3)
-        
-        # Draw beak
-        beak_points = [
-            (int(self.x + self.radius), int(self.y)),
-            (int(self.x + self.radius + 8), int(self.y - 3)),
-            (int(self.x + self.radius + 8), int(self.y + 3))
-        ]
-        pygame.draw.polygon(screen, ORANGE, beak_points)
         
     def get_rect(self):
         return pygame.Rect(self.x - self.radius, self.y - self.radius, 
@@ -150,7 +133,7 @@ class Game:
             self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         else:
             self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
-        pygame.display.set_caption("Flappy Bird")
+        pygame.display.set_caption("Flappy 67")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 36)
         self.big_font = pygame.font.Font(None, 72)
@@ -282,9 +265,9 @@ class Game:
             self.screen.blit(score_text, score_rect)
         else:
             # Draw start screen
-            start_text = self.big_font.render("FLAPPY BIRD", True, WHITE)
+            start_text = self.big_font.render("FLAPPY 67", True, WHITE)
             start_rect = start_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))
-            shadow_text = self.big_font.render("FLAPPY BIRD", True, BLACK)
+            shadow_text = self.big_font.render("FLAPPY 67", True, BLACK)
             shadow_rect = shadow_text.get_rect(center=(SCREEN_WIDTH // 2 + 3, SCREEN_HEIGHT // 2 - 47))
             self.screen.blit(shadow_text, shadow_rect)
             self.screen.blit(start_text, start_rect)
