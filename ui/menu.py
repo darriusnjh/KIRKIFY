@@ -11,14 +11,9 @@ class GameMenu:
     def __init__(self, screen_width: int = 800, screen_height: int = 600, settings: bool = False):
         pygame.init()
         self.settings = settings
-
-        if self.settings.fullscreen:
-            self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-            self.screen_width, self.screen_height = self.screen.get_size()
-        else:
-            w, h = self.settings.window_size
-            self.screen = pygame.display.set_mode((w, h), pygame.RESIZABLE)
-            self.screen_width, self.screen_height = w, h
+        w, h = self.settings.window_size
+        self.screen = pygame.display.set_mode((w, h), pygame.RESIZABLE)
+        self.screen_width, self.screen_height = w, h
         pygame.display.set_caption("67 Games")
         self.clock = pygame.time.Clock()
         
@@ -48,25 +43,6 @@ class GameMenu:
         """Add a game to the menu."""
         self.games.append((name, description, callback))
     
-    def toggle_fullscreen(self):
-        """Toggle between fullscreen and windowed mode."""
-        self.settings.fullscreen = not self.settings.fullscreen
-
-        if self.settings.fullscreen:
-            self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-            self.screen_width, self.screen_height = self.screen.get_size()
-        else:
-            w, h = self.settings.window_size
-            self.screen = pygame.display.set_mode((w, h), pygame.RESIZABLE)
-            self.screen_width, self.screen_height = w, h
-        
-        # Update fonts for new screen size
-        title_size = UITheme.get_responsive_font_size(72, self.screen_height, 48)
-        menu_size = UITheme.get_responsive_font_size(48, self.screen_height, 32)
-        subtitle_size = UITheme.get_responsive_font_size(24, self.screen_height, 18)
-        self.title_font = pygame.font.Font(None, title_size)
-        self.menu_font = pygame.font.Font(None, menu_size)
-        self.subtitle_font = pygame.font.Font(None, subtitle_size)
     
     def handle_input(self):
         """Handle keyboard input for menu navigation."""
@@ -104,9 +80,6 @@ class GameMenu:
                             # Game exited, return to menu
                             pass
                         return True  # Continue menu after game
-                elif event.key == pygame.K_F11:
-                    # Toggle fullscreen
-                    self.toggle_fullscreen()
                 elif event.key == pygame.K_ESCAPE:
                     return False
         return True
@@ -167,7 +140,6 @@ class GameMenu:
             instructions = [
                 "UP/DOWN: Navigate",
                 "ENTER: Select game",
-                "F11: Toggle Fullscreen",
                 "ESC: Exit"
             ]
             y_offset = int(self.screen_height * 0.85)
