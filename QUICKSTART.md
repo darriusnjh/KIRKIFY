@@ -42,14 +42,21 @@ python main.py --no-hand
 
 ## How to Play
 
-### Hand Gesture Controls
-1. **Position yourself** in front of the webcam
-2. **Raise your hand** (left, right, or both!) so it's visible to the camera
-3. **Wave your hand UP quickly** to make the bird jump
-4. The game will show which hands are detected in the top-left corner:
-   - **Blue text** = Left hand detected 👈
-   - **Red text** = Right hand detected 👉
-   - **Green text** = Hand detected (model doesn't support left/right)
+### ⚠️ ALTERNATING HANDS MODE (NEW!)
+The game now requires you to **alternate between left and right hands**!
+
+1. **Position yourself** in front of the webcam with **both hands visible**
+2. **Wave LEFT hand UP** to jump
+3. **Wave RIGHT hand UP** for the next jump
+4. **Continue alternating**: LEFT → RIGHT → LEFT → RIGHT...
+5. Watch the **BIG indicator** at the top of screen:
+   - 🔵 **"Wave LEFT Hand!"** = Use left hand
+   - 🔴 **"Wave RIGHT Hand!"** = Use right hand
+   - 🟡 **"Wave Either Hand!"** = First jump, any hand works
+
+**Note**: Waving the same hand twice won't work - you MUST alternate!
+
+See [ALTERNATING_MODE.md](ALTERNATING_MODE.md) for detailed guide and strategies.
 
 ### Keyboard Controls
 - **SPACE** - Make bird jump
@@ -81,7 +88,14 @@ python main.py --no-hand
 2. **Clear background** - Avoid cluttered backgrounds
 3. **Hand position** - Keep hands within camera frame
 4. **Distance** - Stay about 1-2 feet from camera
-5. **Gesture** - Make deliberate upward movements to jump
+5. **Gesture** - Make **quick upward movements** to jump (more sensitive now!)
+
+### ⚡ Performance Optimizations
+The game is now tuned for **maximum sensitivity and responsiveness**:
+- **Jump threshold**: 15 pixels (was 30) - smaller movements trigger jumps
+- **Frame processing**: Every frame (was every 2nd) - instant response
+- **Detection confidence**: 0.3 (was 0.5) - easier hand detection
+- **Smart cooldown**: 5 frames (~0.08s) prevents accidental double-jumps
 
 ## Troubleshooting
 

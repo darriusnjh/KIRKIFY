@@ -24,7 +24,7 @@ class HandDetector:
         self.net = None
         self.output_layers = None
         self.classes = ["hand"]
-        self.confidence_threshold = 0.5
+        self.confidence_threshold = 0.2  # Reduced from 0.5 for more sensitive detection
         self.nms_threshold = 0.4
         
         # MediaPipe setup
@@ -53,8 +53,8 @@ class HandDetector:
                         self.hands_detector = self.mp_hands.Hands(
                             static_image_mode=False,
                             max_num_hands=2,
-                            min_detection_confidence=0.5,
-                            min_tracking_confidence=0.5
+                            min_detection_confidence=0.3,  # Reduced from 0.5 for more sensitivity
+                            min_tracking_confidence=0.3    # Reduced from 0.5 for better tracking
                         )
                         print("✓ Successfully loaded MediaPipe hand detector")
                         return
