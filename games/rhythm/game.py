@@ -46,11 +46,11 @@ LONG_NOTE_POINTS_PER_HIT = 20  # Points per rapid hit on long note
 
 # Fever mode section settings
 FEVER_MODE_DURATION = 300  # frames (5 seconds at 60 FPS)
-FEVER_MODE_TRIGGER_INTERVAL = 600  # Start fever mode every 600 frames (10 seconds)
+FEVER_MODE_TRIGGER_INTERVAL = 400  # Start fever mode every 600 frames (10 seconds)
 
 # Finale mode settings
 FINALE_MODE_DURATION = 300  # frames (10 seconds at 60 FPS)
-FINALE_HIT_COOLDOWN = 5  # Frames between freestyle hits (for rapid tapping)
+FINALE_HIT_COOLDOWN = 10  # Frames between freestyle hits (for rapid tapping)
 FINALE_POINTS_PER_HIT = 50  # Points per freestyle hit in finale
 
 

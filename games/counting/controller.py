@@ -67,8 +67,8 @@ class CountingGameController:
         
         self.running = True
         self.last_hand_y = {'left': None, 'right': None}
-        self.movement_threshold = 30  # pixels of movement to detect gesture
-        self.frame_skip = 2
+        self.movement_threshold = 20  # pixels of movement to detect gesture (reduced from 30 for more sensitivity)
+        self.frame_skip = 1  # Process every frame for better responsiveness (reduced from 2)
         self.frame_counter = 0
         
         # Track hand movement states for up/down detection
@@ -128,6 +128,9 @@ class CountingGameController:
             else:
                 delta_y = state['last_y'] - center_y  # Positive = moved up, Negative = moved down
                 
+                # Always update last_y for smoother tracking
+                state['last_y'] = center_y
+                
                 if abs(delta_y) > self.movement_threshold:
                     if delta_y > 0:  # Moving up
                         if state['direction'] != 'up':
@@ -144,8 +147,6 @@ class CountingGameController:
                         # Update valley if we're going lower
                         if state['valley_y'] is None or center_y > state['valley_y']:
                             state['valley_y'] = center_y
-                
-                state['last_y'] = center_y
         
         # Detect movement for right hand
         if right_hand:
@@ -157,6 +158,9 @@ class CountingGameController:
                 state['last_y'] = center_y
             else:
                 delta_y = state['last_y'] - center_y  # Positive = moved up, Negative = moved down
+                
+                # Always update last_y for smoother tracking
+                state['last_y'] = center_y
                 
                 if abs(delta_y) > self.movement_threshold:
                     if delta_y > 0:  # Moving up
@@ -174,8 +178,6 @@ class CountingGameController:
                         # Update valley if we're going lower
                         if state['valley_y'] is None or center_y > state['valley_y']:
                             state['valley_y'] = center_y
-                
-                state['last_y'] = center_y
         
         # Return the first action detected (or None)
         return actions[0] if actions else None
