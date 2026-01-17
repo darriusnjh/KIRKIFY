@@ -20,6 +20,10 @@ PIPE_SPEED = 3
 PIPE_SPAWN_RATE = 90  # frames between pipe spawns
 GROUND_HEIGHT = 100
 
+# Asset Path
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+ASSETS_DIR = os.path.join(BASE_DIR, 'assets')
+
 # Colors (Flappy Bird style)
 SKY_BLUE = (135, 206, 250)
 WHITE = (255, 255, 255)
@@ -85,32 +89,74 @@ class Pipe:
         self.gap_y = random.randint(150, SCREEN_HEIGHT - GROUND_HEIGHT - 150)
         self.passed = False
         
+        # Static storage for pipe images to avoid reloading
+        if not hasattr(Pipe, 'pipe_img'):
+            Pipe.pipe_img = None
+            pipe_path = os.path.join(ASSETS_DIR, 'pipe.png')
+            if os.path.exists(pipe_path):
+                try:
+                    raw_pipe = pygame.image.load(pipe_path).convert_alpha()
+                    # Scale width to match PIPE_WIDTH, keep aspect ratio or just stretch?
+                    # Streatching to PIPE_WIDTH is safer for gameplay consistency
+                    Pipe.pipe_img = pygame.transform.scale(raw_pipe, (PIPE_WIDTH, raw_pipe.get_height()))
+                    print(f"Loaded custom pipe: {pipe_path}")
+                except Exception as e:
+                    print(f"Could not load pipe image: {e}")
+        
     def update(self):
         self.x -= PIPE_SPEED
         
     def draw(self, screen):
-        # Top pipe
-        top_rect = pygame.Rect(self.x, 0, PIPE_WIDTH, self.gap_y - PIPE_GAP // 2)
-        pygame.draw.rect(screen, GREEN, top_rect)
-        pygame.draw.rect(screen, BLACK, top_rect, 3)
-        
-        # Bottom pipe
-        bottom_y = self.gap_y + PIPE_GAP // 2
-        bottom_rect = pygame.Rect(self.x, bottom_y, PIPE_WIDTH, 
-                                  SCREEN_HEIGHT - GROUND_HEIGHT - bottom_y)
-        pygame.draw.rect(screen, GREEN, bottom_rect)
-        pygame.draw.rect(screen, BLACK, bottom_rect, 3)
-        
-        # Pipe caps
-        cap_width = PIPE_WIDTH + 10
-        top_cap = pygame.Rect(self.x - 5, self.gap_y - PIPE_GAP // 2 - 20, 
-                             cap_width, 20)
-        bottom_cap = pygame.Rect(self.x - 5, self.gap_y + PIPE_GAP // 2, 
+        if hasattr(Pipe, 'pipe_img') and Pipe.pipe_img:
+            # Draw using images
+            
+            # Bottom Pipe
+            # Calculate visible height for bottom pipe
+            bottom_y = self.gap_y + PIPE_GAP // 2
+            bottom_height = SCREEN_HEIGHT - GROUND_HEIGHT - bottom_y
+            
+            # Handle bottom pipe
+            # We crop the pipe image or scale it? 
+            # Standard flappy bird pipes have a cap at top.
+            # Let's simple-scale the whole image to the rect for now to fit any user image.
+            # A more advanced way is to slice the cap, but user might provide anything.
+            # Let's try to keep aspect ratio of cap if possible, but stretching is easiest "just works" logic.
+            # Better visual: Tile the body, Draw cap. But we don't know capping.
+            # Simple approach: Scale simple.
+            
+            bottom_pipe_surface = pygame.transform.scale(Pipe.pipe_img, (PIPE_WIDTH, bottom_height))
+            screen.blit(bottom_pipe_surface, (self.x, bottom_y))
+            
+            # Top Pipe
+            top_height = self.gap_y - PIPE_GAP // 2
+            top_pipe_surface = pygame.transform.scale(Pipe.pipe_img, (PIPE_WIDTH, top_height))
+            # Flip vertically for the top pipe
+            top_pipe_surface = pygame.transform.flip(top_pipe_surface, False, True)
+            screen.blit(top_pipe_surface, (self.x, 0))
+            
+        else:
+            # Top pipe
+            top_rect = pygame.Rect(self.x, 0, PIPE_WIDTH, self.gap_y - PIPE_GAP // 2)
+            pygame.draw.rect(screen, GREEN, top_rect)
+            pygame.draw.rect(screen, BLACK, top_rect, 3)
+            
+            # Bottom pipe
+            bottom_y = self.gap_y + PIPE_GAP // 2
+            bottom_rect = pygame.Rect(self.x, bottom_y, PIPE_WIDTH, 
+                                      SCREEN_HEIGHT - GROUND_HEIGHT - bottom_y)
+            pygame.draw.rect(screen, GREEN, bottom_rect)
+            pygame.draw.rect(screen, BLACK, bottom_rect, 3)
+            
+            # Pipe caps
+            cap_width = PIPE_WIDTH + 10
+            top_cap = pygame.Rect(self.x - 5, self.gap_y - PIPE_GAP // 2 - 20, 
                                  cap_width, 20)
-        pygame.draw.rect(screen, GREEN, top_cap)
-        pygame.draw.rect(screen, BLACK, top_cap, 3)
-        pygame.draw.rect(screen, GREEN, bottom_cap)
-        pygame.draw.rect(screen, BLACK, bottom_cap, 3)
+            bottom_cap = pygame.Rect(self.x - 5, self.gap_y + PIPE_GAP // 2, 
+                                     cap_width, 20)
+            pygame.draw.rect(screen, GREEN, top_cap)
+            pygame.draw.rect(screen, BLACK, top_cap, 3)
+            pygame.draw.rect(screen, GREEN, bottom_cap)
+            pygame.draw.rect(screen, BLACK, bottom_cap, 3)
         
     def get_rects(self):
         top_rect = pygame.Rect(self.x, 0, PIPE_WIDTH, self.gap_y - PIPE_GAP // 2)
@@ -140,6 +186,17 @@ class Game:
         self.sound_manager = sound_manager
         self.reset()
         self.high_score = self.load_high_score()
+        
+        # Load background
+        self.background_img = None
+        bg_path = os.path.join(ASSETS_DIR, 'background.png')
+        if os.path.exists(bg_path):
+            try:
+                bg = pygame.image.load(bg_path).convert()
+                self.background_img = pygame.transform.scale(bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
+                print(f"Loaded background: {bg_path}")
+            except Exception as e:
+                print(f"Could not load background: {e}")
         
     def reset(self):
         self.bird = Bird(SCREEN_WIDTH // 4, SCREEN_HEIGHT // 2)
@@ -238,15 +295,18 @@ class Game:
     
     def draw(self):
         # Draw sky background
-        self.screen.fill(SKY_BLUE)
-        
-        # Draw clouds (simple circles)
-        for i in range(3):
-            x = (i * 150 + self.frame_count // 2) % (SCREEN_WIDTH + 100) - 50
-            y = 50 + i * 80
-            pygame.draw.circle(self.screen, WHITE, (x, y), 30)
-            pygame.draw.circle(self.screen, WHITE, (x + 20, y), 35)
-            pygame.draw.circle(self.screen, WHITE, (x + 40, y), 30)
+        if self.background_img:
+            self.screen.blit(self.background_img, (0, 0))
+        else:
+            self.screen.fill(SKY_BLUE)
+            
+            # Draw clouds (simple circles)
+            for i in range(3):
+                x = (i * 150 + self.frame_count // 2) % (SCREEN_WIDTH + 100) - 50
+                y = 50 + i * 80
+                pygame.draw.circle(self.screen, WHITE, (x, y), 30)
+                pygame.draw.circle(self.screen, WHITE, (x + 20, y), 35)
+                pygame.draw.circle(self.screen, WHITE, (x + 40, y), 30)
         
         if self.game_started:
             # Draw pipes
@@ -273,11 +333,11 @@ class Game:
             self.screen.blit(shadow_text, shadow_rect)
             self.screen.blit(start_text, start_rect)
             
-            instruction_text = self.font.render("Alternate L/R Hands to Jump!", True, BLACK)
+            instruction_text = self.font.render("Alternate L/R Hands to Jump!", True, WHITE)
             inst_rect = instruction_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 50))
             self.screen.blit(instruction_text, inst_rect)
             
-            instruction_text2 = pygame.font.Font(None, 24).render("Wave Left, then Right, then Left...", True, BLACK)
+            instruction_text2 = pygame.font.Font(None, 24).render("Wave Left, then Right, then Left...", True, WHITE)
             inst_rect2 = instruction_text2.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 80))
             self.screen.blit(instruction_text2, inst_rect2)
             
