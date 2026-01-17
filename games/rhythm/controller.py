@@ -60,10 +60,10 @@ class RhythmHandController:
         self.running = True
         self.last_hand_positions = {}  # Track positions per hand
         self.jump_threshold = 32  # pixels to move up to trigger gesture
-        self.frame_skip = 2  # Process every Nth frame for performance
+        self.frame_skip = 1  # Process every frame for better responsiveness (reduced from 2)
         self.frame_counter = 0  # Frame counter for processing hand detection
         self.jump_cooldown = 0  # Cooldown counter for preventing rapid gestures
-        self.jump_cooldown_frames = 10  # Cooldown period in frames
+        self.jump_cooldown_frames = 3  # Cooldown period in frames (reduced from 10 for rapid notes)
         self.still_threshold = 1  # pixels - if hand moves less than this, consider it still
         self.reset_after_still_frames = 20  # Reset position after N frames of being still
     

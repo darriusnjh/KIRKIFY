@@ -41,7 +41,7 @@ GOOD_WINDOW = 40
 OK_WINDOW = 60
 
 # Long note settings
-LONG_NOTE_HIT_COOLDOWN = 8  # Frames between hits on long note (for rapid tapping)
+LONG_NOTE_HIT_COOLDOWN = 4  # Frames between hits on long note (for rapid tapping) - reduced for better responsiveness
 LONG_NOTE_POINTS_PER_HIT = 20  # Points per rapid hit on long note
 
 # Fever mode section settings
@@ -132,19 +132,25 @@ class LongNote(Note):
         
     def update(self):
         """Move note downward and update cooldown."""
-        super().update()
+        # Move note downward
+        self.y += NOTE_SPEED
         
         # Update hit cooldown
         if self.hit_cooldown > 0:
             self.hit_cooldown -= 1
         
         # Check if note is in hit zone (allow hitting throughout the long note)
-        top_in_zone = self.y - self.height // 2 <= HIT_ZONE_Y + OK_WINDOW
-        bottom_in_zone = self.y + self.height // 2 >= HIT_ZONE_Y - OK_WINDOW
-        self.in_hit_zone = top_in_zone and bottom_in_zone
+        # More generous hit zone - check if ANY part of the long note overlaps with expanded hit zone
+        note_top = self.y - self.height // 2
+        note_bottom = self.y + self.height // 2
+        hit_zone_top = HIT_ZONE_Y - OK_WINDOW - 20  # Extra buffer
+        hit_zone_bottom = HIT_ZONE_Y + OK_WINDOW + 20  # Extra buffer
         
-        # Deactivate if completely past the hit zone
-        if self.y - self.height // 2 > HIT_ZONE_Y + OK_WINDOW + 50:
+        # Note is in hit zone if there's any overlap
+        self.in_hit_zone = not (note_bottom < hit_zone_top or note_top > hit_zone_bottom)
+        
+        # Deactivate if completely past the screen
+        if self.y - self.height // 2 > SCREEN_HEIGHT + 50:
             self.active = False
     
     def can_hit(self) -> bool:
@@ -185,12 +191,21 @@ class LongNote(Note):
                            (self.x - self.width // 2, y_pos),
                            (self.x + self.width // 2, y_pos))
         
+        # Add visual feedback for hit readiness
+        if self.in_hit_zone:
+            if self.can_hit():
+                # Green glow when ready to hit
+                pygame.draw.rect(screen, GREEN, rect, 5)
+            else:
+                # Yellow glow when in cooldown
+                pygame.draw.rect(screen, YELLOW, rect, 3)
+        
         # Add purple glow for fever mode notes
         if self.is_fever:
             pygame.draw.rect(screen, PURPLE, rect, 4)
         
         # Draw border with special pattern
-        pygame.draw.rect(screen, WHITE, rect, 3)
+        pygame.draw.rect(screen, WHITE, rect, 2)
         
         # Draw stripes to indicate it's a long note
         for i in range(0, self.height, 20):
