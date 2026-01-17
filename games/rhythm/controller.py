@@ -2,8 +2,10 @@ import pygame
 import cv2
 import numpy as np
 import sys
-from rhythm_game import RhythmGame
-from hand_detector import HandDetector
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
+from games.rhythm.game import RhythmGame
+from core.hand_detector import HandDetector
 
 
 class RhythmHandController:

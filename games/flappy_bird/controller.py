@@ -2,9 +2,11 @@ import pygame
 import cv2
 import numpy as np
 import sys
-from game import Game
-from hand_detector import HandDetector
-from sound_manager import SoundManager
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
+from games.flappy_bird.game import Game
+from core.hand_detector import HandDetector
+from core.sound_manager import SoundManager
 
 
 class FlappyBirdController:

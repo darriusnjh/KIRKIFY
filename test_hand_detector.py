@@ -6,7 +6,10 @@ Tests both MediaPipe (with left/right detection) and YOLO models.
 import cv2
 import argparse
 import time
-from hand_detector import HandDetector
+import sys
+import os
+sys.path.insert(0, os.path.dirname(__file__))
+from core.hand_detector import HandDetector
 
 
 def test_webcam(model_type: str = "mediapipe", camera_id: int = 0, show_fps: bool = True):
