@@ -37,6 +37,24 @@ class Bird:
         self.velocity = 0
         self.radius = 15
         self.rotation = 0
+        self.image = None
+        
+        # Try to load custom bird image
+        image_path = os.path.join("assets", "bird.png")
+        if os.path.exists(image_path):
+            try:
+                raw_image = pygame.image.load(image_path).convert_alpha()
+                # Scale to fit approximate size while maintaining aspect ratio
+                # We target a height based on the bird's radius
+                target_height = int(self.radius * 2.8)
+                original_width, original_height = raw_image.get_size()
+                aspect_ratio = original_width / original_height
+                target_width = int(target_height * aspect_ratio)
+                
+                self.image = pygame.transform.scale(raw_image, (target_width, target_height))
+                print(f"Loaded custom bird art: {image_path} ({target_width}x{target_height})")
+            except Exception as e:
+                print(f"Could not load bird image: {e}")
         
     def update(self):
         self.velocity += GRAVITY
@@ -49,6 +67,13 @@ class Bird:
         self.velocity = JUMP_STRENGTH
         
     def draw(self, screen):
+        if self.image:
+             # Rotate image
+             rotated_image = pygame.transform.rotate(self.image, -self.rotation) # Negative rotation for correct visual direction
+             rect = rotated_image.get_rect(center=(int(self.x), int(self.y)))
+             screen.blit(rotated_image, rect)
+             return
+
         # Draw bird as a circle with a small triangle for beak
         center = (int(self.x), int(self.y))
         pygame.draw.circle(screen, YELLOW, center, self.radius)
