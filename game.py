@@ -10,8 +10,8 @@ pygame.init()
 # Constants
 SCREEN_WIDTH = 400
 SCREEN_HEIGHT = 600
-GRAVITY = 0.5
-JUMP_STRENGTH = -8
+GRAVITY = 0.7
+JUMP_STRENGTH = -6  # Reduced from -8 to -4 (half the jump height)
 PIPE_WIDTH = 60
 PIPE_GAP = 150
 PIPE_SPEED = 3
