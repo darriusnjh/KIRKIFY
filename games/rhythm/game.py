@@ -49,7 +49,7 @@ FEVER_MODE_DURATION = 300  # frames (5 seconds at 60 FPS)
 FEVER_MODE_TRIGGER_INTERVAL = 600  # Start fever mode every 600 frames (10 seconds)
 
 # Finale mode settings
-FINALE_MODE_DURATION = 600  # frames (10 seconds at 60 FPS)
+FINALE_MODE_DURATION = 300  # frames (10 seconds at 60 FPS)
 FINALE_HIT_COOLDOWN = 5  # Frames between freestyle hits (for rapid tapping)
 FINALE_POINTS_PER_HIT = 50  # Points per freestyle hit in finale
 
@@ -424,6 +424,9 @@ class RhythmGame:
         if hit_quality == 'perfect':
             feedback = "PERFECT! x2" if self.fever_mode else "PERFECT!"
             self.show_feedback(feedback, YELLOW)
+            # Play 67 sound on perfect hit
+            if self.sound_manager:
+                self.sound_manager.play_count_sound()
         elif hit_quality == 'good':
             feedback = "GOOD! x2" if self.fever_mode else "GOOD!"
             self.show_feedback(feedback, GREEN)
@@ -470,7 +473,7 @@ class RhythmGame:
         if self.frame_count >= self.next_fever_mode_at and not self.fever_mode and not self.finale_mode:
             self.fever_mode = True
             self.fever_mode_timer = FEVER_MODE_DURATION
-            self.show_feedback("67 MODE!", PURPLE)
+            self.show_feedback("FEVER MODE!", PURPLE)
             
         # Update fever mode timer
         if self.fever_mode:
@@ -560,11 +563,11 @@ class RhythmGame:
         # Draw fever mode banner on top of everything (drawn last so it's in front)
         if self.fever_mode and self.game_started and not self.game_over and not self.finale_mode:
             # Fever mode banner
-            fever_text = self.big_font.render("67 MODE!", True, YELLOW)
+            fever_text = self.big_font.render("FEVER MODE!", True, YELLOW)
             fever_rect = fever_text.get_rect(center=(SCREEN_WIDTH // 2, 80))
             # Add outline for better visibility
             for dx, dy in [(-2, -2), (-2, 2), (2, -2), (2, 2)]:
-                outline_text = self.big_font.render("67 MODE!", True, BLACK)
+                outline_text = self.big_font.render("FEVER MODE!", True, BLACK)
                 self.screen.blit(outline_text, (fever_rect.x + dx, fever_rect.y + dy))
             self.screen.blit(fever_text, fever_rect)
             
