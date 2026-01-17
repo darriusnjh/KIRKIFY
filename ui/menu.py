@@ -16,7 +16,9 @@ class GameMenu:
         self.screen_width, self.screen_height = w, h
         pygame.display.set_caption("67 Games")
         self.clock = pygame.time.Clock()
-        
+        self.bg_image = pygame.image.load("assets/background.png").convert()
+        self.bg_cache_size = None
+        self.bg_scaled = None
         # Use responsive fonts from UITheme
         title_size = UITheme.get_responsive_font_size(72, screen_height, 48)
         menu_size = UITheme.get_responsive_font_size(48, screen_height, 32)
@@ -38,7 +40,13 @@ class GameMenu:
         self.selected_index = 0
         self.games = []  # List of (name, description, callback)
         self.running = True
-        
+    def _get_scaled_bg(self):
+        size = (self.screen_width, self.screen_height)
+        if self.bg_cache_size != size:
+            self.bg_scaled = pygame.transform.smoothscale(self.bg_image, size)
+            self.bg_cache_size = size
+        return self.bg_scaled
+
     def add_game(self, name: str, description: str, callback: Callable):
         """Add a game to the menu."""
         self.games.append((name, description, callback))
@@ -86,70 +94,149 @@ class GameMenu:
     
     def draw(self):
         """Draw the menu."""
-        self.screen.fill(self.BLACK)
-        
-        # Title - responsive positioning
-        title_text = self.title_font.render("67 Games", True, self.YELLOW)
-        title_rect = title_text.get_rect(center=(self.screen_width // 2, int(self.screen_height * 0.1)))
-        self.screen.blit(title_text, title_rect)
-        
-        # Subtitle
-        subtitle_text = self.subtitle_font.render("Select a game using arrow keys and press ENTER", True, self.GRAY)
-        subtitle_rect = subtitle_text.get_rect(center=(self.screen_width // 2, int(self.screen_height * 0.15)))
-        self.screen.blit(subtitle_text, subtitle_rect)
-        
-        # Game list - responsive positioning with more spacing
-        # Game list - responsive positioning with more spacing
+        # Background image
+        self.screen.blit(self._get_scaled_bg(), (0, 0))
+        self.overlay_alpha = 170
+        # Dark overlay for readability
+        overlay = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, self.overlay_alpha))
+        self.screen.blit(overlay, (0, 0))
+
+        # ===== Title (with shadow) =====
+        self.draw_text_shadow_center(
+            self.title_font,
+            "67 Games",
+            self.YELLOW,
+            (self.screen_width // 2, int(self.screen_height * 0.10)),
+            offset=3
+        )
+
+        # ===== Subtitle (with shadow) =====
+        self.draw_text_shadow_center(
+            self.subtitle_font,
+            "Select a game using arrow keys and press ENTER",
+            self.WHITE,  # brighter than GRAY for busy backgrounds
+            (self.screen_width // 2, int(self.screen_height * 0.15)),
+            offset=2
+        )
+
+        # ===== Game list layout =====
         start_y = int(self.screen_height * 0.22)
         spacing = int(self.screen_height * 0.18)
-        
+
         for i, (name, description, _) in enumerate(self.games):
             y_pos = start_y + i * spacing
             item_height = int(self.screen_height * 0.16)
-            
-            # Highlight selected game
-            if i == self.selected_index:
-                # Draw background highlight
+
+            is_selected = (i == self.selected_index)
+
+            # Bright-mode highlight card for selected item
+            if is_selected:
                 highlight_rect = pygame.Rect(
-                    int(self.screen_width * 0.05), 
+                    int(self.screen_width * 0.05),
                     y_pos,
-                    int(self.screen_width * 0.9), 
+                    int(self.screen_width * 0.9),
                     item_height
                 )
-                pygame.draw.rect(self.screen, self.DARK_BLUE, highlight_rect)
-                pygame.draw.rect(self.screen, self.BLUE, highlight_rect, 3)
-                
-                # Draw selection arrow
-                arrow_text = self.menu_font.render(">", True, self.YELLOW)
+
+                card = pygame.Surface((highlight_rect.w, highlight_rect.h), pygame.SRCALPHA)
+                card.fill((245, 248, 255, 210))  # light card
+                self.screen.blit(card, (highlight_rect.x, highlight_rect.y))
+
+                pygame.draw.rect(self.screen, (90, 140, 255), highlight_rect, 4)
+
+                arrow_text = self.menu_font.render(">", True, (20, 20, 20))
                 arrow_y = y_pos + (item_height - arrow_text.get_height()) // 2
                 self.screen.blit(arrow_text, (int(self.screen_width * 0.08), arrow_y))
-            
-            # Game name
-            color = self.YELLOW if i == self.selected_index else self.WHITE
-            name_text = self.menu_font.render(name, True, color)
+
+            # Text colors (dark on light card, light on dark background)
+            name_color = (25, 25, 25) if is_selected else self.WHITE
+            desc_color = (60, 60, 60) if is_selected else self.GRAY
+
+            name_x = int(self.screen_width * 0.12)
             name_y = y_pos + int(item_height * 0.15)
-            self.screen.blit(name_text, (int(self.screen_width * 0.12), name_y))
-            
-            # Description
-            desc_text = self.subtitle_font.render(description, True, self.GRAY)
-            desc_y = name_y + name_text.get_height() + 5 
-            self.screen.blit(desc_text, (int(self.screen_width * 0.12), desc_y))
-        
-        # Instructions - responsive positioning
+
+            # Game name (with shadow; smaller shadow on selected)
+            self.draw_text_shadow(
+                self.menu_font,
+                name,
+                name_color,
+                (name_x, name_y),
+                shadow_color=(0, 0, 0) if not is_selected else (255, 255, 255),
+                offset=2 if not is_selected else 1
+            )
+
+            # Description (with shadow)
+            desc_y = name_y + self.menu_font.get_height() + 5
+            self.draw_text_shadow(
+                self.subtitle_font,
+                description,
+                desc_color,
+                (name_x, desc_y),
+                shadow_color=(0, 0, 0) if not is_selected else (255, 255, 255),
+                offset=1
+            )
+
+        # ===== Instructions (with shadow) =====
         if self.games:
             instructions = [
                 "UP/DOWN: Navigate",
                 "ENTER: Select game",
                 "ESC: Exit"
             ]
+            x = int(self.screen_width * 0.05)
             y_offset = int(self.screen_height * 0.85)
-            spacing = int(self.screen_height * 0.04)
-            for i, instruction in enumerate(instructions):
-                inst_text = self.subtitle_font.render(instruction, True, self.GRAY)
-                self.screen.blit(inst_text, (int(self.screen_width * 0.05), y_offset + i * spacing))
-        
+            inst_spacing = int(self.screen_height * 0.04)
+
+            for idx, instruction in enumerate(instructions):
+                self.draw_text_shadow(
+                    self.subtitle_font,
+                    instruction,
+                    self.WHITE,  # brighter
+                    (x, y_offset + idx * inst_spacing),
+                    offset=2
+                )
+
         pygame.display.flip()
+
+    def draw_text_shadow(
+        self,
+        font: pygame.font.Font,
+        text: str,
+        color: tuple[int, int, int],
+        pos: tuple[int, int],
+        shadow_color: tuple[int, int, int] = (0, 0, 0),
+        offset: int = 2
+    ) -> pygame.Rect:
+        x, y = pos
+
+        shadow_surf = font.render(text, True, shadow_color)
+        self.screen.blit(shadow_surf, (x + offset, y + offset))
+
+        text_surf = font.render(text, True, color)
+        rect = text_surf.get_rect(topleft=(x, y))
+        self.screen.blit(text_surf, rect)
+        return rect
+
     
+    def draw_text_shadow_center(
+        self,
+        font: pygame.font.Font,
+        text: str,
+        color: tuple[int, int, int],
+        center: tuple[int, int],
+        shadow_color: tuple[int, int, int] = (0, 0, 0),
+        offset: int = 2
+    ) -> pygame.Rect:
+        shadow_surf = font.render(text, True, shadow_color)
+        shadow_rect = shadow_surf.get_rect(center=(center[0] + offset, center[1] + offset))
+        self.screen.blit(shadow_surf, shadow_rect)
+
+        text_surf = font.render(text, True, color)
+        rect = text_surf.get_rect(center=center)
+        self.screen.blit(text_surf, rect)
+        return rect
+
     def run(self):
         """Run the menu loop."""
         while self.running:
@@ -161,3 +248,4 @@ class GameMenu:
         
         pygame.quit()
         sys.exit()
+    
