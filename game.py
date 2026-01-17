@@ -135,6 +135,7 @@ class Game:
         self.game_started = False
         self.frame_count = 0
         self.webcam_surface = None
+        self.detected_hands_info = None  # Store hand detection info for display
         
     def load_high_score(self):
         try:
@@ -155,6 +156,10 @@ class Game:
     
     def set_webcam_frame(self, surface):
         self.webcam_surface = surface
+    
+    def set_detected_hands(self, hands_info):
+        """Store information about detected hands for display."""
+        self.detected_hands_info = hands_info
     
     def handle_jump(self):
         if not self.game_over:
@@ -301,6 +306,45 @@ class Game:
             self.screen.blit(scaled_surface, (SCREEN_WIDTH - w - 10, SCREEN_HEIGHT - h - 10))
             # Draw border
             pygame.draw.rect(self.screen, BLACK, (SCREEN_WIDTH - w - 10, SCREEN_HEIGHT - h - 10, w, h), 2)
+        
+        # Draw hand detection status
+        if self.detected_hands_info is not None:
+            hand_info_font = pygame.font.Font(None, 24)
+            y_offset = 10
+            
+            if len(self.detected_hands_info) > 0:
+                for hand in self.detected_hands_info:
+                    handedness = hand.get('handedness', 'Hand')
+                    confidence = hand.get('confidence', 0)
+                    
+                    # Choose color based on handedness
+                    if handedness == 'Left':
+                        color = (100, 100, 255)  # Light blue for left
+                        emoji = "👈"
+                    elif handedness == 'Right':
+                        color = (255, 100, 100)  # Light red for right
+                        emoji = "👉"
+                    else:
+                        color = (100, 255, 100)  # Light green for unknown
+                        emoji = "✋"
+                    
+                    # Draw hand status
+                    text = f"{handedness} Hand: {confidence:.0%}"
+                    hand_text = hand_info_font.render(text, True, color)
+                    # Add black outline for better visibility
+                    outline_text = hand_info_font.render(text, True, BLACK)
+                    for dx, dy in [(-1,-1), (-1,1), (1,-1), (1,1)]:
+                        self.screen.blit(outline_text, (10 + dx, y_offset + dy))
+                    self.screen.blit(hand_text, (10, y_offset))
+                    y_offset += 25
+            else:
+                # No hands detected
+                text = "No hands detected"
+                no_hand_text = hand_info_font.render(text, True, (200, 200, 200))
+                outline_text = hand_info_font.render(text, True, BLACK)
+                for dx, dy in [(-1,-1), (-1,1), (1,-1), (1,1)]:
+                    self.screen.blit(outline_text, (10 + dx, 10 + dy))
+                self.screen.blit(no_hand_text, (10, 10))
         
         pygame.display.flip()
     
