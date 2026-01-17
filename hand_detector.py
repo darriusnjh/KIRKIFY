@@ -4,7 +4,7 @@ from typing import Optional, Tuple, List
 
 
 class HandDetector:
-    def __init__(self, model_type: str = "tiny"):
+    def __init__(self, model_type: str = "prn"):
         """
         Initialize hand detector with YOLO model.
         
@@ -33,7 +33,7 @@ class HandDetector:
         
         if self.model_type not in model_files:
             print(f"Unknown model type: {self.model_type}. Using 'tiny' instead.")
-            self.model_type = "tiny"
+            self.model_type = "prn"
         
         cfg_file, weights_file = model_files[self.model_type]
         cfg_path = f"{model_dir}/{cfg_file}"

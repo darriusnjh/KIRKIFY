@@ -1,5 +1,6 @@
 import pygame
 import cv2
+import numpy as np
 import sys
 from game import Game
 from hand_detector import HandDetector
@@ -36,12 +37,12 @@ class FlappyBirdController:
         self.frame_skip = 2  # Process every Nth frame for performance
         self.frame_counter = 0
         
-    def process_hand_gesture(self, frame):
+    def process_hand_gesture(self, hands):
         """Process hand gesture to detect jump command."""
         if not self.use_hand_control or self.hand_detector is None:
             return False
         
-        hands = self.hand_detector.detect_hands(frame)
+        # hands argument is now passed in, no need to detect again
         
         if len(hands) > 0:
             # Get the hand with highest confidence
@@ -85,18 +86,21 @@ class FlappyBirdController:
                     if ret:
                         # Flip frame horizontally for mirror effect
                         frame = cv2.flip(frame, 1)
+                        # Detect hands first
+                        hands = self.hand_detector.detect_hands(frame)
                         
-                        # Process gesture
-                        if self.process_hand_gesture(frame):
+                        # Draw detections on frame
+                        frame_with_boxes = self.hand_detector.draw_detections(frame, hands)
+                        
+                        # Convert to Pygame surface and update game
+                        frame_rgb = cv2.cvtColor(frame_with_boxes, cv2.COLOR_BGR2RGB)
+                        frame_surface = pygame.image.frombuffer(frame_rgb.tobytes(), frame_rgb.shape[1::-1], "RGB")
+                        self.game.set_webcam_frame(frame_surface)
+                        
+                        # Process gesture using already detected hands
+                        if self.process_hand_gesture(hands):
                             if self.game.handle_jump():
                                 self.sound_manager.play_jump_sound()
-                        
-                        # Draw detections (optional, for debugging)
-                        # hands = self.hand_detector.detect_hands(frame)
-                        # frame = self.hand_detector.draw_detections(frame, hands)
-                        # cv2.imshow('Hand Detection', frame)
-                        # if cv2.waitKey(1) & 0xFF == ord('q'):
-                        #     break
             
             # Update game
             self.game.update()

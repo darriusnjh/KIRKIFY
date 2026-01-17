@@ -134,6 +134,7 @@ class Game:
         self.game_over = False
         self.game_started = False
         self.frame_count = 0
+        self.webcam_surface = None
         
     def load_high_score(self):
         try:
@@ -151,6 +152,9 @@ class Game:
                 json.dump({'high_score': self.high_score}, f)
         except:
             pass
+    
+    def set_webcam_frame(self, surface):
+        self.webcam_surface = surface
     
     def handle_jump(self):
         if not self.game_over:
@@ -286,6 +290,17 @@ class Game:
             restart_text = self.font.render("Press R to Restart", True, WHITE)
             restart_rect = restart_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 60))
             self.screen.blit(restart_text, restart_rect)
+        
+        # Draw webcam feed if available
+        if self.webcam_surface:
+            # Scale to reasonable size (e.g., 25% of width)
+            w = 120
+            h = 90
+            scaled_surface = pygame.transform.scale(self.webcam_surface, (w, h))
+            # Position in bottom-right corner
+            self.screen.blit(scaled_surface, (SCREEN_WIDTH - w - 10, SCREEN_HEIGHT - h - 10))
+            # Draw border
+            pygame.draw.rect(self.screen, BLACK, (SCREEN_WIDTH - w - 10, SCREEN_HEIGHT - h - 10, w, h), 2)
         
         pygame.display.flip()
     
