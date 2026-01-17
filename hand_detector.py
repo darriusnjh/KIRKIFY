@@ -240,7 +240,7 @@ class HandDetector:
     def draw_detections(self, frame: np.ndarray, hands: List[dict]) -> np.ndarray:
         """
         Draw hand detections on frame as simple colored circles/balls.
-        Always shows both left and right hand positions (ghosts if not detected).
+        Always shows both left and right hand positions (solid circles, dimmer when not detected).
         
         Args:
             frame: Input frame
@@ -255,9 +255,9 @@ class HandDetector:
         # Default radius for balls
         default_radius = 50
         
-        # Fixed positions for ghost hands
-        left_ghost_pos = (width // 4, height // 2)
-        right_ghost_pos = (3 * width // 4, height // 2)
+        # Fixed positions for undetected hands
+        left_default_pos = (width // 4, height // 2)
+        right_default_pos = (3 * width // 4, height // 2)
         
         # Track which hands are detected
         left_hand_detected = None
@@ -284,17 +284,18 @@ class HandDetector:
             # Draw white outline
             cv2.circle(result_frame, center, radius, (255, 255, 255), 4)
         else:
-            # Draw ghost left hand
-            color = (150, 0, 0)  # Dimmer blue
-            # Draw semi-transparent circle (outline only)
-            cv2.circle(result_frame, left_ghost_pos, default_radius, color, 3)
-            # Draw dashed effect by drawing small arcs
+            # Draw solid left hand (dimmer when not detected)
+            color = (180, 0, 0)  # Dimmer blue
+            # Draw filled circle (always solid, not ghost)
+            cv2.circle(result_frame, left_default_pos, default_radius, color, -1)
+            # Draw white outline
+            cv2.circle(result_frame, left_default_pos, default_radius, (255, 255, 255), 4)
             
         # Draw label for left hand
         label = "L"
         font_scale = 2.0
         thickness = 4
-        center_to_use = left_hand_detected['center'] if left_hand_detected else left_ghost_pos
+        center_to_use = left_hand_detected['center'] if left_hand_detected else left_default_pos
         text_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
         text_x = center_to_use[0] - text_size[0] // 2
         text_y = center_to_use[1] + text_size[1] // 2
@@ -302,8 +303,8 @@ class HandDetector:
         # Draw text shadow
         cv2.putText(result_frame, label, (text_x + 3, text_y + 3),
                    cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), thickness + 2)
-        # Draw text (dimmer if ghost)
-        text_color = (255, 255, 255) if left_hand_detected else (150, 150, 150)
+        # Draw text (slightly dimmer when not detected)
+        text_color = (255, 255, 255) if left_hand_detected else (200, 200, 200)
         cv2.putText(result_frame, label, (text_x, text_y),
                    cv2.FONT_HERSHEY_SIMPLEX, font_scale, text_color, thickness)
         
@@ -321,14 +322,16 @@ class HandDetector:
             # Draw white outline
             cv2.circle(result_frame, center, radius, (255, 255, 255), 4)
         else:
-            # Draw ghost right hand
-            color = (0, 0, 150)  # Dimmer red
-            # Draw semi-transparent circle (outline only)
-            cv2.circle(result_frame, right_ghost_pos, default_radius, color, 3)
+            # Draw solid right hand (dimmer when not detected)
+            color = (0, 0, 180)  # Dimmer red
+            # Draw filled circle (always solid, not ghost)
+            cv2.circle(result_frame, right_default_pos, default_radius, color, -1)
+            # Draw white outline
+            cv2.circle(result_frame, right_default_pos, default_radius, (255, 255, 255), 4)
         
         # Draw label for right hand
         label = "R"
-        center_to_use = right_hand_detected['center'] if right_hand_detected else right_ghost_pos
+        center_to_use = right_hand_detected['center'] if right_hand_detected else right_default_pos
         text_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
         text_x = center_to_use[0] - text_size[0] // 2
         text_y = center_to_use[1] + text_size[1] // 2
@@ -336,8 +339,8 @@ class HandDetector:
         # Draw text shadow
         cv2.putText(result_frame, label, (text_x + 3, text_y + 3),
                    cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), thickness + 2)
-        # Draw text (dimmer if ghost)
-        text_color = (255, 255, 255) if right_hand_detected else (150, 150, 150)
+        # Draw text (slightly dimmer when not detected)
+        text_color = (255, 255, 255) if right_hand_detected else (200, 200, 200)
         cv2.putText(result_frame, label, (text_x, text_y),
                    cv2.FONT_HERSHEY_SIMPLEX, font_scale, text_color, thickness)
         
