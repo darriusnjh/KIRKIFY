@@ -219,6 +219,14 @@ class RhythmHandController:
         Returns:
             'main_menu' if user wants to return to main menu, 'exit' if user wants to exit, None otherwise
         """
+        # Show loading screen
+        try:
+            from core.loading import LoadingScreen
+            loading = LoadingScreen(self.game.screen)
+            loading.play()
+        except Exception as e:
+            print(f"Error showing loading screen: {e}")
+
         while self.running:
             # Handle Pygame events
             for event in pygame.event.get():

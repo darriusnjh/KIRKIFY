@@ -281,6 +281,14 @@ class FlappyBirdController:
         Returns:
             'main_menu' if user wants to return to main menu, None otherwise
         """
+        # Show loading screen
+        try:
+            from core.loading import LoadingScreen
+            loading = LoadingScreen(self.game.screen)
+            loading.play()
+        except Exception as e:
+            print(f"Error showing loading screen: {e}")
+
         clock = pygame.time.Clock()
         
         while self.running:
