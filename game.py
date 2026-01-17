@@ -10,8 +10,8 @@ pygame.init()
 # Constants
 SCREEN_WIDTH = 400
 SCREEN_HEIGHT = 600
-GRAVITY = 0.5
-JUMP_STRENGTH = -8
+GRAVITY = 0.7
+JUMP_STRENGTH = -6  # Reduced from -8 to -4 (half the jump height)
 PIPE_WIDTH = 60
 PIPE_GAP = 150
 PIPE_SPEED = 3
@@ -135,6 +135,9 @@ class Game:
         self.game_started = False
         self.frame_count = 0
         self.webcam_surface = None
+        self.detected_hands_info = None  # Store hand detection info for display
+        self.next_jump_hand = 'Either'  # Which hand should jump next (for alternating)
+        self.hands_corrected = False  # Whether hands were auto-corrected
         
     def load_high_score(self):
         try:
@@ -155,6 +158,12 @@ class Game:
     
     def set_webcam_frame(self, surface):
         self.webcam_surface = surface
+    
+    def set_detected_hands(self, hands_info, next_hand=None, corrected=False):
+        """Store information about detected hands for display."""
+        self.detected_hands_info = hands_info
+        self.next_jump_hand = next_hand  # Which hand should jump next
+        self.hands_corrected = corrected  # Whether hands were reassigned
     
     def handle_jump(self):
         if not self.game_over:
@@ -249,9 +258,13 @@ class Game:
             self.screen.blit(shadow_text, shadow_rect)
             self.screen.blit(start_text, start_rect)
             
-            instruction_text = self.font.render("Press SPACE or Wave Hand", True, BLACK)
+            instruction_text = self.font.render("Alternate L/R Hands to Jump!", True, BLACK)
             inst_rect = instruction_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 50))
             self.screen.blit(instruction_text, inst_rect)
+            
+            instruction_text2 = pygame.font.Font(None, 24).render("Wave Left, then Right, then Left...", True, BLACK)
+            inst_rect2 = instruction_text2.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 80))
+            self.screen.blit(instruction_text2, inst_rect2)
             
             # Draw bird at start position
             self.bird.draw(self.screen)
@@ -301,6 +314,89 @@ class Game:
             self.screen.blit(scaled_surface, (SCREEN_WIDTH - w - 10, SCREEN_HEIGHT - h - 10))
             # Draw border
             pygame.draw.rect(self.screen, BLACK, (SCREEN_WIDTH - w - 10, SCREEN_HEIGHT - h - 10, w, h), 2)
+        
+        # Draw hand detection status
+        if self.detected_hands_info is not None:
+            hand_info_font = pygame.font.Font(None, 24)
+            next_hand_font = pygame.font.Font(None, 32)
+            y_offset = 10
+            
+            # Show which hand should jump next (BIG and BOLD)
+            if hasattr(self, 'next_jump_hand') and self.next_jump_hand:
+                if self.next_jump_hand == 'Either':
+                    next_text = "Wave Either Hand!"
+                    next_color = (255, 255, 100)  # Yellow
+                elif self.next_jump_hand == 'Left':
+                    next_text = "Wave LEFT Hand! 👈"
+                    next_color = (100, 150, 255)  # Blue
+                else:  # Right
+                    next_text = "Wave RIGHT Hand! 👉"
+                    next_color = (255, 100, 100)  # Red
+                
+                next_hand_text = next_hand_font.render(next_text, True, next_color)
+                # Add thick black outline for emphasis
+                outline_text = next_hand_font.render(next_text, True, BLACK)
+                for dx in [-2, -1, 0, 1, 2]:
+                    for dy in [-2, -1, 0, 1, 2]:
+                        if dx != 0 or dy != 0:
+                            self.screen.blit(outline_text, (10 + dx, y_offset + dy))
+                self.screen.blit(next_hand_text, (10, y_offset))
+                y_offset += 40
+            
+            # Count detected left and right hands
+            left_count = sum(1 for h in self.detected_hands_info if h.get('handedness') == 'Left')
+            right_count = sum(1 for h in self.detected_hands_info if h.get('handedness') == 'Right')
+            
+            # Show correction status if hands were reassigned
+            if hasattr(self, 'hands_corrected') and self.hands_corrected:
+                hands_status = f"Hands: L={left_count} R={right_count} [Auto-corrected by position]"
+                status_color = (255, 200, 100)  # Orange for corrected
+            else:
+                hands_status = f"Hands: L={left_count} R={right_count}"
+                status_color = (180, 180, 180)  # Gray for normal
+            
+            status_text = hand_info_font.render(hands_status, True, status_color)
+            outline_text = hand_info_font.render(hands_status, True, BLACK)
+            for dx, dy in [(-1,-1), (-1,1), (1,-1), (1,1)]:
+                self.screen.blit(outline_text, (10 + dx, y_offset + dy))
+            self.screen.blit(status_text, (10, y_offset))
+            y_offset += 25
+            
+            if len(self.detected_hands_info) > 0:
+                for hand in self.detected_hands_info:
+                    handedness = hand.get('handedness', 'Hand')
+                    confidence = hand.get('confidence', 0)
+                    
+                    # Choose color based on handedness
+                    if handedness == 'Left':
+                        color = (100, 100, 255)  # Light blue for left
+                    elif handedness == 'Right':
+                        color = (255, 100, 100)  # Light red for right
+                    else:
+                        color = (100, 255, 100)  # Light green for unknown
+                    
+                    # Highlight the hand that should jump next
+                    if hasattr(self, 'next_jump_hand') and handedness == self.next_jump_hand:
+                        color = (255, 255, 0)  # Bright yellow for active hand
+                        text = f">>> {handedness} Hand: {confidence:.0%} <<<"
+                    else:
+                        text = f"{handedness} Hand: {confidence:.0%}"
+                    
+                    hand_text = hand_info_font.render(text, True, color)
+                    # Add black outline for better visibility
+                    outline_text = hand_info_font.render(text, True, BLACK)
+                    for dx, dy in [(-1,-1), (-1,1), (1,-1), (1,1)]:
+                        self.screen.blit(outline_text, (10 + dx, y_offset + dy))
+                    self.screen.blit(hand_text, (10, y_offset))
+                    y_offset += 25
+            else:
+                # No hands detected
+                text = "No hands detected"
+                no_hand_text = hand_info_font.render(text, True, (200, 200, 200))
+                outline_text = hand_info_font.render(text, True, BLACK)
+                for dx, dy in [(-1,-1), (-1,1), (1,-1), (1,1)]:
+                    self.screen.blit(outline_text, (10 + dx, 10 + dy))
+                self.screen.blit(no_hand_text, (10, 10))
         
         pygame.display.flip()
     

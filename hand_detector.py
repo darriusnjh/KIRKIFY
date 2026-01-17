@@ -2,25 +2,68 @@ import cv2
 import numpy as np
 from typing import Optional, Tuple, List
 
+try:
+    import mediapipe as mp
+    MEDIAPIPE_AVAILABLE = True
+except ImportError:
+    MEDIAPIPE_AVAILABLE = False
+    print("MediaPipe not available. Install with: pip install mediapipe")
+
 
 class HandDetector:
-    def __init__(self, model_type: str = "prn"):
+    def __init__(self, model_type: str = "mediapipe", detect_hands_lr: bool = True):
         """
-        Initialize hand detector with YOLO model.
+        Initialize hand detector.
         
         Args:
-            model_type: Type of YOLO model to use ('tiny', 'prn', 'v4-tiny', or 'yolo')
+            model_type: Type of model to use ('mediapipe', 'tiny', 'prn', 'v4-tiny', or 'yolo')
+            detect_hands_lr: If True, detect left/right hands (only works with 'mediapipe')
         """
         self.model_type = model_type
+        self.detect_hands_lr = detect_hands_lr
         self.net = None
         self.output_layers = None
         self.classes = ["hand"]
-        self.confidence_threshold = 0.5
+        self.confidence_threshold = 0.2  # Reduced from 0.5 for more sensitive detection
         self.nms_threshold = 0.4
+        
+        # MediaPipe setup
+        self.mp_hands = None
+        self.hands_detector = None
+        
         self.load_model()
         
     def load_model(self):
-        """Load YOLO model and weights."""
+        """Load hand detection model."""
+        if self.model_type == "mediapipe":
+            if not MEDIAPIPE_AVAILABLE:
+                print("⚠ MediaPipe not available. Falling back to YOLO.")
+                self.model_type = "prn"
+            else:
+                try:
+                    # Check if mp.solutions is available
+                    if not hasattr(mp, 'solutions'):
+                        print("⚠ MediaPipe is installed but 'solutions' module is not available.")
+                        print("  This usually means MediaPipe is corrupted.")
+                        print("  Try: pip uninstall mediapipe -y && pip install mediapipe==0.10.9")
+                        print("  Falling back to YOLO...")
+                        self.model_type = "prn"
+                    else:
+                        self.mp_hands = mp.solutions.hands
+                        self.hands_detector = self.mp_hands.Hands(
+                            static_image_mode=False,
+                            max_num_hands=2,
+                            min_detection_confidence=0.3,  # Reduced from 0.5 for more sensitivity
+                            min_tracking_confidence=0.3    # Reduced from 0.5 for better tracking
+                        )
+                        print("✓ Successfully loaded MediaPipe hand detector")
+                        return
+                except Exception as e:
+                    print(f"⚠ Error loading MediaPipe: {e}")
+                    print("  Falling back to YOLO...")
+                    self.model_type = "prn"
+        
+        # YOLO model loading
         model_dir = "models"
         
         # Map model types to file names
@@ -32,7 +75,7 @@ class HandDetector:
         }
         
         if self.model_type not in model_files:
-            print(f"Unknown model type: {self.model_type}. Using 'tiny' instead.")
+            print(f"Unknown model type: {self.model_type}. Using 'prn' instead.")
             self.model_type = "prn"
         
         cfg_file, weights_file = model_files[self.model_type]
@@ -40,6 +83,15 @@ class HandDetector:
         weights_path = f"{model_dir}/{weights_file}"
         
         try:
+            import os
+            if not os.path.exists(cfg_path) or not os.path.exists(weights_path):
+                print(f"✗ YOLO model files not found:")
+                print(f"  Looking for: {cfg_path}")
+                print(f"  Looking for: {weights_path}")
+                print("  Please download models: cd models && sh download-models.sh")
+                self.net = None
+                return
+                
             self.net = cv2.dnn.readNet(weights_path, cfg_path)
             self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
             self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
@@ -48,10 +100,10 @@ class HandDetector:
             layer_names = self.net.getLayerNames()
             self.output_layers = [layer_names[i - 1] for i in self.net.getUnconnectedOutLayers()]
             
-            print(f"Successfully loaded {self.model_type} model")
+            print(f"✓ Successfully loaded {self.model_type} YOLO model")
         except Exception as e:
-            print(f"Error loading model: {e}")
-            print("Please make sure models are downloaded. Run: cd models && sh download-models.sh")
+            print(f"✗ Error loading model: {e}")
+            print("  Please make sure models are downloaded. Run: cd models && sh download-models.sh")
             self.net = None
     
     def detect_hands(self, frame: np.ndarray) -> List[dict]:
@@ -62,8 +114,60 @@ class HandDetector:
             frame: Input image frame (BGR format)
             
         Returns:
-            List of detected hands with bounding boxes and confidence scores
+            List of detected hands with bounding boxes, confidence scores, and handedness (if available)
+            Each hand dict contains: 'bbox', 'confidence', 'center', and optionally 'handedness' ('Left' or 'Right')
         """
+        if self.model_type == "mediapipe" and self.hands_detector is not None:
+            return self._detect_hands_mediapipe(frame)
+        else:
+            return self._detect_hands_yolo(frame)
+    
+    def _detect_hands_mediapipe(self, frame: np.ndarray) -> List[dict]:
+        """Detect hands using MediaPipe with left/right classification."""
+        height, width = frame.shape[:2]
+        
+        # Convert BGR to RGB for MediaPipe
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = self.hands_detector.process(rgb_frame)
+        
+        hands = []
+        if results.multi_hand_landmarks and results.multi_handedness:
+            for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
+                # Get bounding box from landmarks
+                x_coords = [lm.x for lm in hand_landmarks.landmark]
+                y_coords = [lm.y for lm in hand_landmarks.landmark]
+                
+                x_min = int(min(x_coords) * width)
+                y_min = int(min(y_coords) * height)
+                x_max = int(max(x_coords) * width)
+                y_max = int(max(y_coords) * height)
+                
+                # Add some padding
+                padding = 20
+                x_min = max(0, x_min - padding)
+                y_min = max(0, y_min - padding)
+                x_max = min(width, x_max + padding)
+                y_max = min(height, y_max + padding)
+                
+                w = x_max - x_min
+                h = y_max - y_min
+                
+                # Get handedness (Left or Right)
+                hand_label = handedness.classification[0].label
+                confidence = handedness.classification[0].score
+                
+                hands.append({
+                    'bbox': (x_min, y_min, w, h),
+                    'confidence': confidence,
+                    'center': (x_min + w // 2, y_min + h // 2),
+                    'handedness': hand_label,
+                    'landmarks': hand_landmarks
+                })
+        
+        return hands
+    
+    def _detect_hands_yolo(self, frame: np.ndarray) -> List[dict]:
+        """Detect hands using YOLO (no left/right classification)."""
         if self.net is None:
             return []
         
@@ -128,29 +232,113 @@ class HandDetector:
         
         return None
     
+    def __del__(self):
+        """Clean up resources."""
+        if self.hands_detector is not None:
+            self.hands_detector.close()
+    
     def draw_detections(self, frame: np.ndarray, hands: List[dict]) -> np.ndarray:
         """
-        Draw hand detections on frame.
+        Draw hand detections on frame as simple colored circles/balls.
+        Always shows both left and right hand positions (ghosts if not detected).
         
         Args:
             frame: Input frame
             hands: List of detected hands
             
         Returns:
-            Frame with detections drawn
+            Frame with detections drawn as circles
         """
         result_frame = frame.copy()
+        height, width = frame.shape[:2]
+        
+        # Default radius for balls
+        default_radius = 50
+        
+        # Fixed positions for ghost hands
+        left_ghost_pos = (width // 4, height // 2)
+        right_ghost_pos = (3 * width // 4, height // 2)
+        
+        # Track which hands are detected
+        left_hand_detected = None
+        right_hand_detected = None
         
         for hand in hands:
-            x, y, w, h = hand['bbox']
-            confidence = hand['confidence']
+            handedness = hand.get('handedness', None)
+            if handedness == 'Left':
+                left_hand_detected = hand
+            elif handedness == 'Right':
+                right_hand_detected = hand
+        
+        # Draw left hand (detected or ghost)
+        if left_hand_detected:
+            # Draw actual detected left hand
+            x, y, w, h = left_hand_detected['bbox']
+            center = left_hand_detected['center']
+            radius = min(w, h) // 2
+            radius = max(30, min(radius, 80))
+            color = (255, 0, 0)  # Blue for left (BGR)
             
-            # Draw bounding box
-            cv2.rectangle(result_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            # Draw filled circle
+            cv2.circle(result_frame, center, radius, color, -1)
+            # Draw white outline
+            cv2.circle(result_frame, center, radius, (255, 255, 255), 4)
+        else:
+            # Draw ghost left hand
+            color = (150, 0, 0)  # Dimmer blue
+            # Draw semi-transparent circle (outline only)
+            cv2.circle(result_frame, left_ghost_pos, default_radius, color, 3)
+            # Draw dashed effect by drawing small arcs
             
-            # Draw label
-            label = f"Hand: {confidence:.2f}"
-            cv2.putText(result_frame, label, (x, y - 10),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        # Draw label for left hand
+        label = "L"
+        font_scale = 2.0
+        thickness = 4
+        center_to_use = left_hand_detected['center'] if left_hand_detected else left_ghost_pos
+        text_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
+        text_x = center_to_use[0] - text_size[0] // 2
+        text_y = center_to_use[1] + text_size[1] // 2
+        
+        # Draw text shadow
+        cv2.putText(result_frame, label, (text_x + 3, text_y + 3),
+                   cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), thickness + 2)
+        # Draw text (dimmer if ghost)
+        text_color = (255, 255, 255) if left_hand_detected else (150, 150, 150)
+        cv2.putText(result_frame, label, (text_x, text_y),
+                   cv2.FONT_HERSHEY_SIMPLEX, font_scale, text_color, thickness)
+        
+        # Draw right hand (detected or ghost)
+        if right_hand_detected:
+            # Draw actual detected right hand
+            x, y, w, h = right_hand_detected['bbox']
+            center = right_hand_detected['center']
+            radius = min(w, h) // 2
+            radius = max(30, min(radius, 80))
+            color = (0, 0, 255)  # Red for right (BGR)
+            
+            # Draw filled circle
+            cv2.circle(result_frame, center, radius, color, -1)
+            # Draw white outline
+            cv2.circle(result_frame, center, radius, (255, 255, 255), 4)
+        else:
+            # Draw ghost right hand
+            color = (0, 0, 150)  # Dimmer red
+            # Draw semi-transparent circle (outline only)
+            cv2.circle(result_frame, right_ghost_pos, default_radius, color, 3)
+        
+        # Draw label for right hand
+        label = "R"
+        center_to_use = right_hand_detected['center'] if right_hand_detected else right_ghost_pos
+        text_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
+        text_x = center_to_use[0] - text_size[0] // 2
+        text_y = center_to_use[1] + text_size[1] // 2
+        
+        # Draw text shadow
+        cv2.putText(result_frame, label, (text_x + 3, text_y + 3),
+                   cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), thickness + 2)
+        # Draw text (dimmer if ghost)
+        text_color = (255, 255, 255) if right_hand_detected else (150, 150, 150)
+        cv2.putText(result_frame, label, (text_x, text_y),
+                   cv2.FONT_HERSHEY_SIMPLEX, font_scale, text_color, thickness)
         
         return result_frame
