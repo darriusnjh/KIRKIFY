@@ -7,17 +7,20 @@ from sound_manager import SoundManager
 
 
 class FlappyBirdController:
-    def __init__(self, use_hand_control: bool = True, model_type: str = "tiny"):
+    def __init__(self, use_hand_control: bool = True, model_type: str = "tiny", 
+                 debug_visualization: bool = False):
         """
         Initialize Flappy Bird game controller.
         
         Args:
             use_hand_control: Whether to use hand gesture control
             model_type: YOLO model type for hand detection
+            debug_visualization: Show hand detection window for debugging
         """
         self.sound_manager = SoundManager()
         self.game = Game(sound_manager=self.sound_manager)
         self.use_hand_control = use_hand_control
+        self.debug_visualization = debug_visualization
         
         if use_hand_control:
             self.hand_detector = HandDetector(model_type=model_type)
@@ -31,32 +34,20 @@ class FlappyBirdController:
             self.cap = None
         
         self.running = True
-        self.last_hand_y = None
-        self.jump_threshold = 30  # pixels to move up to trigger jump
+        self.movement_threshold = 30  # pixels of movement to detect gesture
         self.frame_skip = 2  # Process every Nth frame for performance
         self.frame_counter = 0
         
     def process_hand_gesture(self, frame):
-        """Process hand gesture to detect jump command."""
+        """
+        Process dual-hand gesture to detect jump command.
+        Requires both hands: one goes up while the other goes down.
+        """
         if not self.use_hand_control or self.hand_detector is None:
             return False
         
-        hands = self.hand_detector.detect_hands(frame)
-        
-        if len(hands) > 0:
-            # Get the hand with highest confidence
-            hand = max(hands, key=lambda h: h['confidence'])
-            center_y = hand['center'][1]
-            
-            # Detect upward movement
-            if self.last_hand_y is not None:
-                if self.last_hand_y - center_y > self.jump_threshold:
-                    self.last_hand_y = center_y
-                    return True
-            
-            self.last_hand_y = center_y
-        
-        return False
+        # Use the new dual-hand gesture detection
+        return self.hand_detector.detect_dual_hand_gesture(frame, self.movement_threshold)
     
     def run(self):
         """Main game loop."""
@@ -91,12 +82,20 @@ class FlappyBirdController:
                             if self.game.handle_jump():
                                 self.sound_manager.play_jump_sound()
                         
-                        # Draw detections (optional, for debugging)
-                        # hands = self.hand_detector.detect_hands(frame)
-                        # frame = self.hand_detector.draw_detections(frame, hands)
-                        # cv2.imshow('Hand Detection', frame)
-                        # if cv2.waitKey(1) & 0xFF == ord('q'):
-                        #     break
+                        # Draw detections (if debug visualization is enabled)
+                        if self.debug_visualization:
+                            hands = self.hand_detector.detect_hands(frame)
+                            frame_width = frame.shape[1]
+                            identified = self.hand_detector.identify_hands(hands, frame_width)
+                            frame = self.hand_detector.draw_detections(frame, hands, identified)
+                            
+                            # Add instruction text
+                            cv2.putText(frame, "Both hands required: Left up + Right down = Jump", 
+                                       (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                            
+                            cv2.imshow('Hand Detection - Both Hands Required', frame)
+                            if cv2.waitKey(1) & 0xFF == ord('q'):
+                                self.running = False
             
             # Update game
             self.game.update()
@@ -131,12 +130,15 @@ def main():
     parser.add_argument('-n', '--network', type=str, default='tiny',
                        choices=['tiny', 'prn', 'v4-tiny', 'yolo'],
                        help='YOLO model type to use (default: tiny)')
+    parser.add_argument('--debug', action='store_true',
+                       help='Show hand detection visualization window')
     
     args = parser.parse_args()
     
     controller = FlappyBirdController(
         use_hand_control=not args.no_hand,
-        model_type=args.network
+        model_type=args.network,
+        debug_visualization=args.debug
     )
     controller.run()
 
