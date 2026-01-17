@@ -432,7 +432,7 @@ def main():
     """Main entry point."""
     import argparse
     
-    parser = argparse.ArgumentParser(description='Flappy Bird with Hand Gesture Control')
+    parser = argparse.ArgumentParser(description='Flappy 67 with Hand Gesture Control')
     parser.add_argument('--no-hand', action='store_true', 
                        help='Disable hand gesture control (use keyboard only)')
     parser.add_argument('-m', '--model', type=str, default='mediapipe',
@@ -449,7 +449,7 @@ def main():
     model_type = args.network if args.network else args.model
     
     print("=" * 60)
-    print("Flappy Bird with Hand Gesture Control")
+    print("Flappy 67 with Hand Gesture Control")
     print("=" * 60)
     print(f"Model: {model_type}")
     print(f"Hand Control: {'Enabled' if not args.no_hand else 'Disabled'}")
