@@ -2,21 +2,23 @@ import pygame
 import sys
 from typing import List, Callable, Optional
 from core.ui_utils import UITheme
+from ui import settings
 
 
 class GameMenu:
     """Main menu for 67 Games."""
     
-    def __init__(self, screen_width: int = 800, screen_height: int = 600, fullscreen: bool = False):
+    def __init__(self, screen_width: int = 800, screen_height: int = 600, settings: bool = False):
         pygame.init()
-        self.fullscreen = fullscreen
-        if fullscreen:
+        self.settings = settings
+
+        if self.settings.fullscreen:
             self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
             self.screen_width, self.screen_height = self.screen.get_size()
         else:
-            self.screen = pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE)
-            self.screen_width = screen_width
-            self.screen_height = screen_height
+            w, h = self.settings.window_size
+            self.screen = pygame.display.set_mode((w, h), pygame.RESIZABLE)
+            self.screen_width, self.screen_height = w, h
         pygame.display.set_caption("67 Games")
         self.clock = pygame.time.Clock()
         
@@ -48,15 +50,15 @@ class GameMenu:
     
     def toggle_fullscreen(self):
         """Toggle between fullscreen and windowed mode."""
-        self.fullscreen = not self.fullscreen
-        if self.fullscreen:
+        self.settings.fullscreen = not self.settings.fullscreen
+
+        if self.settings.fullscreen:
             self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
             self.screen_width, self.screen_height = self.screen.get_size()
         else:
-            # Return to default windowed size
-            self.screen = pygame.display.set_mode((800, 600), pygame.RESIZABLE)
-            self.screen_width = 800
-            self.screen_height = 600
+            w, h = self.settings.window_size
+            self.screen = pygame.display.set_mode((w, h), pygame.RESIZABLE)
+            self.screen_width, self.screen_height = w, h
         
         # Update fonts for new screen size
         title_size = UITheme.get_responsive_font_size(72, self.screen_height, 48)
@@ -72,9 +74,9 @@ class GameMenu:
             if event.type == pygame.QUIT:
                 return False
             elif event.type == pygame.VIDEORESIZE:
-                # Handle window resize
-                if not self.fullscreen:
+                if not self.settings.fullscreen:
                     self.screen_width, self.screen_height = event.w, event.h
+                    self.settings.window_size = (self.screen_width, self.screen_height)
                     self.screen = pygame.display.set_mode((self.screen_width, self.screen_height), pygame.RESIZABLE)
                     # Update fonts for new screen size
                     title_size = UITheme.get_responsive_font_size(72, self.screen_height, 48)

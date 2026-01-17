@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from ui.menu import GameMenu
 from games.counting.controller import CountingGameController
+from ui.settings import AppSettings
 
 # Import FlappyBirdController
 def get_flappy_controller():
@@ -25,7 +26,7 @@ def get_rhythm_controller():
     return RhythmHandController
 
 
-def launch_flappy_bird(model_type="mediapipe", use_hand_control=True, fullscreen=False):
+def launch_flappy_bird(model_type="mediapipe", use_hand_control=True, settings=None):
     """
     Launch Flappy Bird game.
     
@@ -36,23 +37,23 @@ def launch_flappy_bird(model_type="mediapipe", use_hand_control=True, fullscreen
     controller = FlappyBirdController(
         use_hand_control=use_hand_control,
         model_type=model_type,
-        fullscreen=fullscreen
+        fullscreen = settings.fullscreen if settings else False
     )
     return controller.run()
 
 
-def launch_counting_game(model_type="mediapipe", fullscreen=False):
+def launch_counting_game(model_type="mediapipe", settings=None):
     """
     Launch Counting Game.
     
     Returns:
         'main_menu' if user wants to return to menu, 'exit' if user wants to exit
     """
-    controller = CountingGameController(model_type=model_type, fullscreen=fullscreen)
+    controller = CountingGameController(model_type=model_type, fullscreen = settings.fullscreen if settings else False)
     return controller.run()
 
 
-def launch_rhythm_game(model_type="mediapipe", use_hand_control=True, fullscreen=False):
+def launch_rhythm_game(model_type="mediapipe", use_hand_control=True, settings=None):
     """
     Launch Rhythm Game.
     
@@ -63,7 +64,7 @@ def launch_rhythm_game(model_type="mediapipe", use_hand_control=True, fullscreen
     controller = RhythmHandController(
         use_hand_control=use_hand_control,
         model_type=model_type,
-        fullscreen=fullscreen
+        fullscreen = settings.fullscreen if settings else False
     )
     return controller.run()
 
@@ -95,29 +96,26 @@ def main():
         launch_rhythm_game(model_type=args.model, use_hand_control=not args.no_hand, fullscreen=args.fullscreen)
         return
     
-    # Otherwise, show menu
-    menu = GameMenu(screen_width=800, screen_height=600, fullscreen=args.fullscreen)
-    
-    # Store fullscreen state to pass to games
-    game_fullscreen = args.fullscreen
+    settings = AppSettings(fullscreen=args.fullscreen, window_size=(800, 600))
+    menu = GameMenu(settings=settings, screen_width=800, screen_height=600)
     
     # Add games to menu
     menu.add_game(
         "Flappy Bird",
         "Classic Flappy Bird with hand gesture control",
-        lambda: launch_flappy_bird(model_type=args.model, use_hand_control=not args.no_hand, fullscreen=game_fullscreen)
+        lambda: launch_flappy_bird(model_type=args.model, use_hand_control=not args.no_hand, settings=settings)
     )
     
     menu.add_game(
         "Counting Game",
         "Count alternating hand gestures in 30 seconds",
-        lambda: launch_counting_game(model_type=args.model, fullscreen=game_fullscreen)
+        lambda: launch_counting_game(model_type=args.model, settings=settings)
     )
     
     menu.add_game(
         "Rhythm Game",
         "Hit notes with left and right hand gestures",
-        lambda: launch_rhythm_game(model_type=args.model, use_hand_control=not args.no_hand, fullscreen=game_fullscreen)
+        lambda: launch_rhythm_game(model_type=args.model, use_hand_control=not args.no_hand, settings=settings)
     )
     
     # Run menu

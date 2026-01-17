@@ -250,6 +250,8 @@ class RhythmGame:
             active_notes = [n for n in self.notes if n.active]
             if len(active_notes) == 0:
                 self.game_over = True
+                if self.sound_manager:
+                    self.sound_manager.stop_background_music()
                 
     def draw(self):
         """Draw everything."""
@@ -466,7 +468,9 @@ class RhythmGame:
                     running = False
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
-                        running = False
+                            if self.sound_manager:
+                                self.sound_manager.stop_background_music()
+                            return "main_menu"
                     elif event.key == pygame.K_r and self.game_over:
                         self.reset()
                     elif event.key == pygame.K_a:  # Left hand (for testing)
@@ -477,7 +481,8 @@ class RhythmGame:
             self.update()
             self.draw()
             self.clock.tick(FPS)
-            
+        if self.sound_manager:
+            self.sound_manager.stop_background_music()
         pygame.quit()
         sys.exit()
 
