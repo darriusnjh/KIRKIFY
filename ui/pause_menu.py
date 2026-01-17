@@ -101,47 +101,58 @@ class PauseMenu:
         self.screen.blit(title_text, title_rect)
         
         # Draw menu options
-        menu_start_y = int(self.screen_height * 0.4)
-        option_spacing = int(self.screen_height * 0.1)
-        
+        menu_start_y = int(self.screen_height * 0.38)
+
+        # padding scales with screen height but has a minimum
+        pad_y = max(8, int(self.screen_height * 0.012))
+        pad_x = max(16, int(self.screen_width * 0.03))
+
+        name_h = self.menu_font.get_height()
+        desc_h = self.subtitle_font.get_height()
+
+        # Make sure the card can fit both lines + padding
+        min_card_h = name_h + desc_h + pad_y * 3
+        card_width = min(400, int(self.screen_width * 0.5))
+        card_height = max(int(self.screen_height * 0.10), min_card_h)
+
+        # Space between cards based on card height (not just screen height)
+        gap = max(10, int(self.screen_height * 0.02))
+        option_spacing = card_height + gap
+
         for i, (name, description) in enumerate(self.options):
             y_pos = menu_start_y + i * option_spacing
-            
-            # Calculate card position
             is_selected = i == self.selected_index
-            card_width = min(400, int(self.screen_width * 0.5))
-            card_height = int(self.screen_height * 0.08)
+
             card_x = (self.screen_width - card_width) // 2
-            
-            # Draw option card
             card_rect = pygame.Rect(card_x, y_pos, card_width, card_height)
-            
+
+            # Draw option card
             if is_selected:
                 pygame.draw.rect(self.screen, UITheme.ACCENT_PRIMARY, card_rect)
                 pygame.draw.rect(self.screen, UITheme.ACCENT_SECONDARY, card_rect, width=2)
             else:
                 pygame.draw.rect(self.screen, UITheme.BG_LIGHT, card_rect)
                 pygame.draw.rect(self.screen, UITheme.TEXT_SECONDARY, card_rect, width=1)
-            
-            # Option name
+
+            # Text positions based on font heights (prevents overlap)
             name_color = UITheme.TEXT_HIGHLIGHT if is_selected else UITheme.TEXT_PRIMARY
             name_text = self.menu_font.render(name, True, name_color)
-            name_x = card_x + 20
-            name_y = y_pos + 10
-            self.screen.blit(name_text, (name_x, name_y))
-            
-            # Description
             desc_text = self.subtitle_font.render(description, True, UITheme.TEXT_SECONDARY)
-            desc_x = card_x + 20
-            desc_y = y_pos + card_height - 25
-            self.screen.blit(desc_text, (desc_x, desc_y))
-            
+
+            text_x = card_x + pad_x
+            name_y = y_pos + pad_y
+            desc_y = name_y + name_h + pad_y // 2
+
+            self.screen.blit(name_text, (text_x, name_y))
+            self.screen.blit(desc_text, (text_x, desc_y))
+
             # Selection indicator
             if is_selected:
                 indicator_x = card_x - 30
                 indicator_y = y_pos + card_height // 2
                 pygame.draw.circle(self.screen, UITheme.ACCENT_PRIMARY, (indicator_x, indicator_y), 6)
                 pygame.draw.circle(self.screen, UITheme.TEXT_PRIMARY, (indicator_x, indicator_y), 4)
+
         
         # Instructions
         instructions_y = int(self.screen_height * 0.85)
