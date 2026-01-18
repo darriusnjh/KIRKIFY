@@ -36,24 +36,6 @@ python game_launcher.py
 - **Hand Control**: Most games track your hand position or specific gestures via the webcam. Ensure you have good lighting and your hand is visible.
 - **Keyboard Control**: You can disable hand tracking and use keyboard controls for testing.
 
-## ⚙️ Advanced Options
-
-You can launch specific games directly or configure settings via command-line arguments:
-
-```bash
-# Launch Flappy Bird directly
-python game_launcher.py --game flappy
-
-# Launch Rhythm Game directly
-python game_launcher.py --game rhythm
-
-# Launch Counting Game directly
-python game_launcher.py --game counting
-
-# Run without hand tracking (Keyboard mode)
-python game_launcher.py --no-hand
-```
-
 ## 🛠️ Technology Stack
 
 - **Python**: Core logic

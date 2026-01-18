@@ -292,7 +292,7 @@ class HandDetector:
             cv2.circle(result_frame, left_default_pos, default_radius, (255, 255, 255), 4)
             
         # Draw label for left hand
-        label = "L"
+        label = "6"
         font_scale = 2.0
         thickness = 4
         center_to_use = left_hand_detected['center'] if (left_hand_detected and left_hand_detected.get('bbox') is not None) else left_default_pos
@@ -330,7 +330,7 @@ class HandDetector:
             cv2.circle(result_frame, right_default_pos, default_radius, (255, 255, 255), 4)
         
         # Draw label for right hand
-        label = "R"
+        label = "7"
         center_to_use = right_hand_detected['center'] if (right_hand_detected and right_hand_detected.get('bbox') is not None) else right_default_pos
         text_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
         text_x = center_to_use[0] - text_size[0] // 2

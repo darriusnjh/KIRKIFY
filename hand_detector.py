@@ -291,10 +291,10 @@ class HandDetector:
             # Draw dashed effect by drawing small arcs
             
         # Draw label for left hand
-        label = "L"
+        label = "6"
         font_scale = 2.0
         thickness = 4
-        center_to_use = left_hand_detected['center'] if left_hand_detected else left_ghost_pos
+        center_to_use = left_hand_detected['center'] if left_han"d_detected else left_ghost_pos
         text_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
         text_x = center_to_use[0] - text_size[0] // 2
         text_y = center_to_use[1] + text_size[1] // 2
@@ -326,8 +326,8 @@ class HandDetector:
             # Draw semi-transparent circle (outline only)
             cv2.circle(result_frame, right_ghost_pos, default_radius, color, 3)
         
-        # Draw label for right hand
-        label = "R"
+        # Draw label for right hand"
+        label = "7"
         center_to_use = right_hand_detected['center'] if right_hand_detected else right_ghost_pos
         text_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
         text_x = center_to_use[0] - text_size[0] // 2

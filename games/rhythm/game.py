@@ -100,7 +100,7 @@ class Note:
         
         # Draw hand indicator
         font = pygame.font.Font(None, 24)
-        text = "👈 L" if self.lane == 'Left' else "R 👉"
+        text = "👈 6" if self.lane == 'Left' else "7 👉"
         text_surface = font.render(text, True, WHITE)
         text_rect = text_surface.get_rect(center=(self.x, int(self.y) + self.height // 2))
         screen.blit(text_surface, text_rect)
