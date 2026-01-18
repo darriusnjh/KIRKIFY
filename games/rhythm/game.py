@@ -736,18 +736,29 @@ class RhythmGame:
             "Press ESC to Quit"
         ]
         
-        y = 180
+        y = 160
         for line in results:
             if not line:
-                color = BLACK
-            elif "Finale Hits" in line:
+                y += 15
+                continue
+                
+            # Use smaller font for detailed stats
+            if any(stat in line for stat in ["Perfect:", "Good:", "OK:", "Miss:", "Long Note Hits:"]):
+                current_font = self.small_font
+                step = 25
+            else:
+                current_font = self.font
+                step = 35
+                
+            if "Finale Hits" in line:
                 color = YELLOW
             else:
                 color = WHITE
-            text = self.font.render(line, True, color)
+                
+            text = current_font.render(line, True, color)
             text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, y))
             self.screen.blit(text, text_rect)
-            y += 35
+            y += step
     
     def set_webcam_surface(self, surface):
         """Set the webcam surface to display."""
@@ -762,8 +773,8 @@ class RhythmGame:
         # Draw webcam feed
         if self.webcam_surface:
             # Scale webcam feed
-            target_width = 240
-            target_height = 180
+            target_width = 160
+            target_height = 120
             scaled_surface = pygame.transform.scale(self.webcam_surface, (target_width, target_height))
             
             # Position in bottom-right corner
