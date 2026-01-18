@@ -202,7 +202,7 @@ class CountingGame(BaseGame):
             title_rect = title_text.get_rect(center=(self.screen_width // 2, self.screen_height // 2 - 100))
             self.screen.blit(title_text, title_rect)
             
-            instruction_text = self.medium_font.render("Move hands UP and DOWN alternately!", True, self.WHITE)
+            instruction_text = self.small_font.render("Move hands UP and DOWN alternately!", True, self.WHITE)
             inst_rect = instruction_text.get_rect(center=(self.screen_width // 2, self.screen_height // 2))
             self.screen.blit(instruction_text, inst_rect)
             
